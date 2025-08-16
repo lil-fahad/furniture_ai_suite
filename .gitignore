@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+
+# Python compiled files
+__pycache__/
+*.pyc
+
+# Model outputs
+models/
+artifacts/
+
+# Datasets
+data/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
