@@ -25,3 +25,9 @@ bash run_unix.sh
 > - Windows: C:\Users\<USER>\.kaggle\kaggle.json
 > - Mac/Linux: ~/.kaggle/kaggle.json
 > أو في جذر المشروع وسيُنقل تلقائيًا.
+
+## Configuration
+
+إعدادات التدريب مخزنة في ملف [`model_config.yml`](model_config.yml). يمكن تعديل
+الحجم الدُفعي، عدد العصور، معدل التعلم، أسماء النماذج، وعدد العمال. يحتوي الملف
+أيضًا على قيمة `seed` لضمان قابلية التكرار.
