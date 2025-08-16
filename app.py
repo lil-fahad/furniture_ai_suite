@@ -17,12 +17,19 @@ def health():
 @app.post("/download")
 def download_all(skip_if_exists: bool = True):
     """ينزّل كل الـ datasets من datasets_catalog.json"""
-    ensure_pkg("kaggle")
+    try:
+        ensure_pkg("kaggle")
+    except ImportError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
     ensure_kaggle_token()
 
     catalog = json.loads(Path("datasets_catalog.json").read_text(encoding="utf-8"))
     for item in catalog:
-        kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
+        try:
+            kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
+        except ImportError as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
     return {"ok": True, "message": "Downloaded/checked datasets."}
 
 @app.post("/prepare")
