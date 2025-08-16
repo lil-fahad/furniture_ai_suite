@@ -25,3 +25,21 @@ bash run_unix.sh
 > - Windows: C:\Users\<USER>\.kaggle\kaggle.json
 > - Mac/Linux: ~/.kaggle/kaggle.json
 > أو في جذر المشروع وسيُنقل تلقائيًا.
+
+## إعدادات التدريب
+يمكن تعديل هايبر باراميترز التدريب من خلال ملف `model_config.yml`:
+
+```yaml
+data_dir: "data/clean256"
+batch_size: 64
+epochs: 20
+patience: 5
+learning_rate: 0.0003
+weight_decay: 0.0001
+backbones:
+  - efficientnet_b0
+  - convnext_tiny
+  - swin_tiny_patch4_window7_224
+```
+
+أي حقل يُحذف من الملف سيُستَخدَم له القيم الافتراضية الموجودة في الكود.

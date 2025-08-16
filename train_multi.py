@@ -1,4 +1,5 @@
 import json
+import yaml
 import torch
 import timm
 import numpy as np
@@ -14,6 +15,35 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from sklearn.metrics import classification_report, confusion_matrix
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+DEFAULT_CONFIG = {
+    "data_dir": "data/clean256",
+    "batch_size": 64,
+    "epochs": 12,
+    "patience": 4,
+    "learning_rate": 3e-4,
+    "weight_decay": 1e-4,
+    "num_workers": 2,
+    "backbones": [
+        "efficientnet_b0",
+        "convnext_tiny",
+        "swin_tiny_patch4_window7_224",
+    ],
+    "models_dir": "models",
+    "artifacts_dir": "artifacts",
+    "img_size": 256,
+}
+
+
+def load_config(path="model_config.yml"):
+    with open(path, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    for k, v in DEFAULT_CONFIG.items():
+        cfg.setdefault(k, v)
+    return cfg
+
+
+CONFIG = load_config()
 
 def make_transforms():
     train_tf = A.Compose([
@@ -48,15 +78,34 @@ def evaluate(model, loader):
     acc = (yh==ys).float().mean().item()
     return acc
 
-def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=3e-4, wd=1e-4):
+def train_one(backbone, config=CONFIG):
     train_tf, val_tf = make_transforms()
-    tr = DataLoader(AlbDS(f'{data_dir}/train', train_tf), batch_size=64, shuffle=True,  num_workers=2, pin_memory=True)
-    va = DataLoader(AlbDS(f'{data_dir}/val',   val_tf),   batch_size=64, shuffle=False, num_workers=2, pin_memory=True)
+    tr = DataLoader(
+        AlbDS(f"{config['data_dir']}/train", train_tf),
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
+    va = DataLoader(
+        AlbDS(f"{config['data_dir']}/val", val_tf),
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=config["num_workers"],
+        pin_memory=True,
+    )
 
-    classes = sorted([p.name for p in Path(f'{data_dir}/train').iterdir() if p.is_dir()])
-    Path("models").mkdir(exist_ok=True, parents=True)
-    Path("artifacts").mkdir(exist_ok=True, parents=True)
-    with open("artifacts/labels.json","w",encoding="utf-8") as f: json.dump(classes, f, ensure_ascii=False)
+    classes = sorted([
+        p.name for p in Path(f"{config['data_dir']}/train").iterdir() if p.is_dir()
+    ])
+    Path(config["models_dir"]).mkdir(exist_ok=True, parents=True)
+    Path(config["artifacts_dir"]).mkdir(exist_ok=True, parents=True)
+    with open(
+        Path(config["artifacts_dir"]) / "labels.json",
+        "w",
+        encoding="utf-8",
+    ) as f:
+        json.dump(classes, f, ensure_ascii=False)
 
     # try pretrained -> fallback
     try:
@@ -66,13 +115,17 @@ def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=
         model = timm.create_model(backbone, pretrained=False, num_classes=len(classes)).to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=lr, weight_decay=wd)
+    optimizer = AdamW(
+        model.parameters(),
+        lr=config["learning_rate"],
+        weight_decay=config["weight_decay"],
+    )
     scheduler = CosineAnnealingLR(optimizer, T_max=10)
 
     best_acc, no_imp = 0.0, 0
-    best_path = Path("models") / f"best_{backbone}.pth"
+    best_path = Path(config["models_dir"]) / f"best_{backbone}.pth"
 
-    for ep in range(1, max_epochs+1):
+    for ep in range(1, config["epochs"] + 1):
         model.train()
         ep_loss, steps = 0.0, 0
         for x,y in tr:
@@ -91,33 +144,49 @@ def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=
             torch.save(model.state_dict(), best_path)
         else:
             no_imp += 1
-        if no_imp >= patience:
+        if no_imp >= config["patience"]:
             print(f"[{backbone}] ⏹️ Early stop.")
             break
 
     return {"model": backbone, "val_acc": float(best_acc), "ckpt": str(best_path)}
 
-def train_all(data_dir="data/clean256"):
-    backbones = ["efficientnet_b0", "convnext_tiny", "swin_tiny_patch4_window7_224"]
+
+def train_all(config=CONFIG):
     results = []
-    for bb in backbones:
-        results.append(train_one(bb, data_dir=data_dir))
+    for bb in config["backbones"]:
+        results.append(train_one(bb, config))
     results.sort(key=lambda x: x["val_acc"], reverse=True)
-    Path("artifacts").mkdir(parents=True, exist_ok=True)
-    (Path("artifacts")/"finetune_results.json").write_text(json.dumps(results, indent=2, ensure_ascii=False))
+    Path(config["artifacts_dir"]).mkdir(parents=True, exist_ok=True)
+    (Path(config["artifacts_dir"]) / "finetune_results.json").write_text(
+        json.dumps(results, indent=2, ensure_ascii=False)
+    )
     # export best
     best = results[0]
-    classes = json.loads((Path("artifacts")/"labels.json").read_text(encoding="utf-8"))
+    classes = json.loads(
+        (Path(config["artifacts_dir"]) / "labels.json").read_text(encoding="utf-8")
+    )
     model = timm.create_model(best["model"], pretrained=False, num_classes=len(classes))
     model.load_state_dict(torch.load(best["ckpt"], map_location=DEVICE))
     model.to(DEVICE).eval()
 
-    ex = torch.randn(1,3,256,256).to(DEVICE)
-    traced = torch.jit.trace(model, ex); traced.save("artifacts/model.ts")
+    ex = torch.randn(1, 3, config["img_size"], config["img_size"]).to(DEVICE)
+    traced = torch.jit.trace(model, ex)
+    traced.save(Path(config["artifacts_dir"]) / "model.ts")
 
     import torch.onnx
-    torch.onnx.export(model, ex, "artifacts/model.onnx",
-                      input_names=["input"], output_names=["logits"], opset_version=13)
-    print("✅ Exported:", best["ckpt"], "→ artifacts/model.ts, artifacts/model.onnx")
+
+    torch.onnx.export(
+        model,
+        ex,
+        Path(config["artifacts_dir"]) / "model.onnx",
+        input_names=["input"],
+        output_names=["logits"],
+        opset_version=13,
+    )
+    print(
+        "✅ Exported:",
+        best["ckpt"],
+        f"→ {config['artifacts_dir']}/model.ts, {config['artifacts_dir']}/model.onnx",
+    )
 
     return results
