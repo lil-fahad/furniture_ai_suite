@@ -2,10 +2,21 @@ import os, json, stat, subprocess, sys
 from pathlib import Path
 
 def ensure_pkg(pkg: str):
+    """Ensure that ``pkg`` is importable.
+
+    If the package cannot be imported, an :class:`ImportError` is raised with
+    a message instructing the user to install the dependency manually. This
+    avoids implicitly installing packages at runtime and gives clearer feedback
+    to the caller.
+    """
+
     try:
         __import__(pkg)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+    except ImportError as e:
+        raise ImportError(
+            f"Required package '{pkg}' is not installed. Please install it manually"
+            f" (e.g., 'pip install {pkg}')."
+        ) from e
 
 def ensure_kaggle_token() -> None:
     home = Path.home()
