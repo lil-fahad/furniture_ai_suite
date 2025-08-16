@@ -1,0 +1,18 @@
+[
+  {
+    "slug": "prashantsingh001/bedroom-interior-dataset",
+    "dest": "data/raw/bedroom_interiors"
+  },
+  {
+    "slug": "robinreni/house-rooms-image-dataset",
+    "dest": "data/raw/house_rooms"
+  },
+  {
+    "slug": "amoghjrules/indoor-scenes-images",
+    "dest": "data/raw/indoor_scenes"
+  },
+  {
+    "slug": "udaysankarmukherjee/furniture-image-dataset",
+    "dest": "data/raw/furniture_images"
+  }
+]
