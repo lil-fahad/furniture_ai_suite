@@ -46,7 +46,10 @@ def train():
 async def predict(file: UploadFile = File(...), topk: int = Query(3, ge=1, le=10)):
     """تنبؤ بصورة واحدة (ارفع ملف صورة) — يرجع أفضل topk تصنيفات"""
     image_bytes = await file.read()
-    preds, best = predict_bytes(image_bytes, topk=topk)
+    try:
+        preds, best = predict_bytes(image_bytes, topk=topk)
+    except FileNotFoundError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
     return {"ok": True, "backbone": best["model"], "predictions": preds}
 
 @app.get("/labels")

@@ -11,7 +11,13 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 def load_best():
     results_path = Path("artifacts/finetune_results.json")
     labels_path  = Path("artifacts/labels.json")
-    assert results_path.exists() and labels_path.exists(), "لم يتم العثور على نتائج التدريب/الملصقات."
+    missing = []
+    if not results_path.exists():
+        missing.append("finetune_results.json")
+    if not labels_path.exists():
+        missing.append("labels.json")
+    if missing:
+        raise FileNotFoundError(f"Missing file(s): {', '.join(missing)}. درب النموذج أولاً.")
 
     results = json.loads(results_path.read_text(encoding="utf-8"))
     best = results[0]
