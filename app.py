@@ -2,6 +2,9 @@ from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.responses import JSONResponse
 from pathlib import Path
 import json
+import os
+
+import httpx
 
 from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download
 from prepare_data import scan_images, unify_and_clean, export_clean_256
@@ -13,6 +16,24 @@ app = FastAPI(title="Furniture/Interior AI", version="1.0.0")
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/github-user")
+def github_user():
+    """Fetch the authenticated GitHub user using a token from the environment."""
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return JSONResponse({"ok": False, "error": "GITHUB_TOKEN not set"}, status_code=500)
+
+    headers = {"Authorization": f"token {token}"}
+    try:
+        resp = httpx.get("https://api.github.com/user", headers=headers, timeout=10)
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+    data = resp.json()
+    return {"ok": True, "login": data.get("login"), "name": data.get("name")}
 
 @app.post("/download")
 def download_all(skip_if_exists: bool = True):
