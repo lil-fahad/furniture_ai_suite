@@ -38,7 +38,7 @@ class AlbDS(Dataset):
         x,y = self.ds[i]
         return self.t(image=np.array(x))['image'], y
 
-def evaluate(model, loader):
+def evaluate(model, loader, detailed=False, class_names=None):
     model.eval(); ys=[]; yh=[]
     with torch.no_grad():
         for x,y in loader:
@@ -46,6 +46,11 @@ def evaluate(model, loader):
             o = model(x); yh.append(o.argmax(1).cpu()); ys.append(y.cpu())
     yh = torch.cat(yh); ys = torch.cat(ys)
     acc = (yh==ys).float().mean().item()
+    if detailed:
+        ys_np, yh_np = ys.numpy(), yh.numpy()
+        report = classification_report(ys_np, yh_np, target_names=class_names)
+        cm = confusion_matrix(ys_np, yh_np)
+        return acc, report, cm
     return acc
 
 def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=3e-4, wd=1e-4):
@@ -95,6 +100,10 @@ def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=
             print(f"[{backbone}] ⏹️ Early stop.")
             break
 
+    model.load_state_dict(torch.load(best_path, map_location=DEVICE))
+    best_acc, report, cm = evaluate(model, va, detailed=True, class_names=classes)
+    print("Classification Report:\n", report)
+    print("Confusion Matrix:\n", cm)
     return {"model": backbone, "val_acc": float(best_acc), "ckpt": str(best_path)}
 
 def train_all(data_dir="data/clean256"):
