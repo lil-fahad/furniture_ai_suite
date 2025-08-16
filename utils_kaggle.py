@@ -1,11 +1,19 @@
-import os, json, stat, subprocess, sys
+import os, json, stat, subprocess
 from pathlib import Path
 
-def ensure_pkg(pkg: str):
+def ensure_pkg(pkg: str) -> None:
+    """Ensure that a package is available.
+
+    Attempts to import ``pkg`` and raises an informative
+    :class:`ImportError` if it is missing.  Installation must be handled
+    manually by the user or environment.
+    """
     try:
         __import__(pkg)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+    except ImportError as exc:
+        raise ImportError(
+            f"{pkg} is required but not installed. Please install it before running."
+        ) from exc
 
 def ensure_kaggle_token() -> None:
     home = Path.home()
