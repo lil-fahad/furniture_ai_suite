@@ -1,4 +1,5 @@
 import json
+import random
 import torch
 import timm
 import numpy as np
@@ -12,8 +13,18 @@ import torch.nn as nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from sklearn.metrics import classification_report, confusion_matrix
+import yaml
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+def set_seed(seed: int):
+    """Seed Python, NumPy and Torch for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 def make_transforms():
     train_tf = A.Compose([
@@ -98,7 +109,12 @@ def train_one(backbone, data_dir="data/clean256", max_epochs=12, patience=4, lr=
     return {"model": backbone, "val_acc": float(best_acc), "ckpt": str(best_path)}
 
 def train_all(data_dir="data/clean256"):
-    backbones = ["efficientnet_b0", "convnext_tiny", "swin_tiny_patch4_window7_224"]
+    cfg = yaml.safe_load(Path("model_config.yml").read_text())
+    seed = cfg.get("seed")
+    if seed is not None:
+        set_seed(seed)
+    data_dir = cfg.get("data_dir", data_dir)
+    backbones = cfg.get("backbones", ["efficientnet_b0", "convnext_tiny", "swin_tiny_patch4_window7_224"])
     results = []
     for bb in backbones:
         results.append(train_one(bb, data_dir=data_dir))

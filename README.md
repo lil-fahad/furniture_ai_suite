@@ -25,3 +25,6 @@ bash run_unix.sh
 > - Windows: C:\Users\<USER>\.kaggle\kaggle.json
 > - Mac/Linux: ~/.kaggle/kaggle.json
 > أو في جذر المشروع وسيُنقل تلقائيًا.
+
+### التحكم في العشوائية
+لتكرار النتائج يمكن تعديل قيمة `seed` داخل ملف الإعدادات `model_config.yml`.
