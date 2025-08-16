@@ -16,3 +16,4 @@ onnx
 onnxruntime
 pyyaml
 python-multipart
+httpx
