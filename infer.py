@@ -5,12 +5,14 @@ import timm
 import numpy as np
 from pathlib import Path
 from PIL import Image
+import torch.nn as nn
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def load_best():
+def load_best() -> tuple[nn.Module, list[str], dict[str, float | str]]:
+    """Load the best trained model and associated labels."""
     results_path = Path("artifacts/finetune_results.json")
-    labels_path  = Path("artifacts/labels.json")
+    labels_path = Path("artifacts/labels.json")
     assert results_path.exists() and labels_path.exists(), "لم يتم العثور على نتائج التدريب/الملصقات."
 
     results = json.loads(results_path.read_text(encoding="utf-8"))
@@ -23,14 +25,16 @@ def load_best():
     model.to(DEVICE).eval()
     return model, labels, best
 
-def preprocess_pil(img: Image.Image):
-    img = img.convert('RGB').resize((256,256))
+def preprocess_pil(img: Image.Image) -> torch.Tensor:
+    """Convert a PIL image to a normalized tensor."""
+    img = img.convert('RGB').resize((256, 256))
     arr = np.array(img).astype(np.float32) / 255.0
-    arr = arr.transpose(2,0,1)  # CHW
+    arr = arr.transpose(2, 0, 1)  # CHW
     tensor = torch.from_numpy(arr).unsqueeze(0)
     return tensor
 
-def predict_bytes(image_bytes: bytes, topk: int = 3):
+def predict_bytes(image_bytes: bytes, topk: int = 3) -> tuple[list[dict[str, float | str]], dict[str, float | str]]:
+    """Predict top-k labels for raw image bytes."""
     model, labels, best = load_best()
     img = Image.open(io.BytesIO(image_bytes))
     x = preprocess_pil(img).to(DEVICE)
