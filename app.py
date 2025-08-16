@@ -3,6 +3,19 @@ from fastapi.responses import JSONResponse
 from pathlib import Path
 import json
 
+
+# Load datasets catalog once at startup
+CATALOG_PATH = Path("datasets_catalog.json")
+try:
+    DATASETS_CATALOG = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    CATALOG_ERROR = None
+except FileNotFoundError:
+    DATASETS_CATALOG = []
+    CATALOG_ERROR = "datasets_catalog.json not found."
+except json.JSONDecodeError:
+    DATASETS_CATALOG = []
+    CATALOG_ERROR = "datasets_catalog.json is malformed."
+
 from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download
 from prepare_data import scan_images, unify_and_clean, export_clean_256
 from train_multi import train_all
@@ -19,18 +32,21 @@ def download_all(skip_if_exists: bool = True):
     """ينزّل كل الـ datasets من datasets_catalog.json"""
     ensure_pkg("kaggle")
     ensure_kaggle_token()
+    if CATALOG_ERROR:
+        return JSONResponse({"ok": False, "error": CATALOG_ERROR}, status_code=500)
 
-    catalog = json.loads(Path("datasets_catalog.json").read_text(encoding="utf-8"))
-    for item in catalog:
+    for item in DATASETS_CATALOG:
         kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
     return {"ok": True, "message": "Downloaded/checked datasets."}
 
 @app.post("/prepare")
 def prepare():
     """يمسح الصور ويجهز CSV موحد ويصدر clean256/train, clean256/val"""
-    catalog = json.loads(Path("datasets_catalog.json").read_text(encoding="utf-8"))
+    if CATALOG_ERROR:
+        return JSONResponse({"ok": False, "error": CATALOG_ERROR}, status_code=500)
+
     rows = []
-    for it in catalog:
+    for it in DATASETS_CATALOG:
         rows += scan_images(it["dest"], it["slug"])
     df = unify_and_clean(rows, min_size=256, csv_out="data/unified_images.csv")
     out_dir = export_clean_256(csv_path="data/unified_images.csv", out_dir="data/clean256", img_size=256)
