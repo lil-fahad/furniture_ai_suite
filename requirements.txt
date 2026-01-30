@@ -18,3 +18,4 @@ pyyaml
 python-multipart
 httpx
 opencv-python
+streamlit

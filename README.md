@@ -2,6 +2,32 @@
 
 A state-of-the-art interior design classification system powered by deep learning. This professional-grade application provides a complete workflow from data acquisition to model training and inference.
 
+## 🎨 Available Interfaces
+
+This suite provides **three different ways** to interact with the system:
+
+### 1. 🌐 Streamlit Web Interface (NEW!)
+**User-friendly web interface for non-technical users**
+- Beautiful, intuitive UI
+- No coding required
+- Perfect for demos and end-users
+- Access: `http://localhost:8501`
+- [Documentation](STREAMLIT_GUIDE.md)
+
+### 2. 🔧 FastAPI REST API
+**Professional API for developers and integrations**
+- RESTful endpoints
+- Swagger documentation
+- Perfect for integrations
+- Access: `http://localhost:8000/docs`
+- [API Examples](API_EXAMPLES.md)
+
+### 3. 💻 Command Line Interface
+**Direct Python scripts for advanced users**
+- Full control and customization
+- Perfect for automation
+- Training and batch processing
+
 ## 🌟 Features
 
 - **Multi-Source Dataset Integration**: Automatic download and integration of multiple interior design datasets from Kaggle
@@ -44,6 +70,22 @@ Set up your Kaggle credentials (choose one method):
 3. **Environment variables**: Set `KAGGLE_USERNAME` and `KAGGLE_KEY`
 
 ### Running the Application
+
+**On Streamlit (Web Interface):** 🌐 **NEW!**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run Streamlit web interface
+streamlit run streamlit_app.py
+
+# Or use the provided script
+bash run_streamlit.sh  # Linux/Mac
+run_streamlit.bat      # Windows
+```
+Access at: `http://localhost:8501`
+
+See [STREAMLIT_GUIDE.md](STREAMLIT_GUIDE.md) for detailed Streamlit instructions.
 
 **On Replit:** 🌐
 ```bash
