@@ -128,7 +128,7 @@ def train_one(
     wd: float = 1e-4,
     batch_size: int = 64,
     num_workers: int = 2
-) -> Dict[str, Union[float, str]]:
+) -> Dict[str, Union[float, str, int]]:
     """Fine-tune a single backbone on the dataset.
     
     Args:
@@ -250,7 +250,7 @@ def train_one(
 def train_all(
     data_dir: str = "data/clean256",
     backbones: List[str] = None
-) -> List[Dict[str, Union[float, str]]]:
+) -> List[Dict[str, Union[float, str, int]]]:
     """Train multiple backbones and export the best model.
     
     This function trains multiple deep learning models, compares their performance,

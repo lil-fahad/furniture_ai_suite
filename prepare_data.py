@@ -213,7 +213,7 @@ def export_clean_256(
                     # Convert to RGB and resize with high-quality resampling
                     im = im.convert('RGB').resize(
                         (img_size, img_size),
-                        Image.Resampling.LANCZOS
+                        Image.LANCZOS  # Compatible with older Pillow versions
                     )
                     
                     # Handle filename collisions

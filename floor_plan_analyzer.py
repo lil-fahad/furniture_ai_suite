@@ -5,6 +5,7 @@ and provide furniture placement recommendations.
 """
 import cv2
 import numpy as np
+import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from typing import List, Dict, Tuple, Optional, Any
@@ -434,23 +435,39 @@ def analyze_floor_plan_bytes(
     if image is None:
         raise ValueError("Could not decode image from bytes")
     
-    # Save temporarily
-    temp_path = "/tmp/temp_floor_plan.jpg"
-    cv2.imwrite(temp_path, image)
+    # Save temporarily using cross-platform temp file
+    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
+        temp_path = tmp.name
+        cv2.imwrite(temp_path, image)
     
-    # Analyze
-    analyzer = FloorPlanAnalyzer()
-    results = analyzer.analyze_floor_plan(temp_path, output_path)
-    
-    # Add furniture recommendations for each room
-    for room in results["rooms"]:
-        room_with_contour = None
-        for r in analyzer.detect_rooms(analyzer.preprocess(image)):
-            if r["id"] == room["id"]:
-                room_with_contour = r
-                break
+    try:
+        # Analyze
+        analyzer = FloorPlanAnalyzer()
         
-        if room_with_contour:
-            room["furniture_recommendations"] = analyzer.recommend_furniture(room_with_contour)
+        # Get preprocessed image for room detection
+        binary = analyzer.preprocess(image)
+        detected_rooms = analyzer.detect_rooms(binary)
+        
+        # Run full analysis
+        results = analyzer.analyze_floor_plan(temp_path, output_path)
+        
+        # Add furniture recommendations for each room
+        for room in results["rooms"]:
+            # Find matching room from detected_rooms
+            matching_room = None
+            for r in detected_rooms:
+                if r["id"] == room["id"]:
+                    matching_room = r
+                    break
+            
+            if matching_room:
+                room["furniture_recommendations"] = analyzer.recommend_furniture(matching_room)
+        
+        return results
     
-    return results
+    finally:
+        # Clean up temp file
+        try:
+            Path(temp_path).unlink()
+        except Exception:
+            pass

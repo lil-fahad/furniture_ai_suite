@@ -28,6 +28,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global model cache
+_model_cache = {"model": None, "labels": None, "metadata": None}
+
 app = FastAPI(
     title="Professional Interior Design AI Suite",
     version="2.0.0",
@@ -36,10 +39,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Enable CORS for better API accessibility
+# Enable CORS - configure allowed origins via environment variable for production
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

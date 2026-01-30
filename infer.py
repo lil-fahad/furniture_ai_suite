@@ -19,9 +19,17 @@ logger = logging.getLogger(__name__)
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 logger.info(f"Using device: {DEVICE}")
 
+# Global model cache
+_cached_model = None
+_cached_labels = None
+_cached_metadata = None
 
-def load_best() -> Tuple[nn.Module, List[str], Dict[str, Union[float, str]]]:
+
+def load_best(use_cache: bool = True) -> Tuple[nn.Module, List[str], Dict[str, Union[float, str]]]:
     """Load the best trained model and associated labels.
+    
+    Args:
+        use_cache: Whether to use cached model if available
     
     Returns:
         Tuple containing:
@@ -33,6 +41,13 @@ def load_best() -> Tuple[nn.Module, List[str], Dict[str, Union[float, str]]]:
         FileNotFoundError: If model files don't exist.
         Exception: If model loading fails.
     """
+    global _cached_model, _cached_labels, _cached_metadata
+    
+    # Return cached model if available and caching is enabled
+    if use_cache and _cached_model is not None:
+        logger.debug("Using cached model")
+        return _cached_model, _cached_labels, _cached_metadata
+    
     results_path = Path("artifacts/finetune_results.json")
     labels_path = Path("artifacts/labels.json")
     
@@ -68,6 +83,12 @@ def load_best() -> Tuple[nn.Module, List[str], Dict[str, Union[float, str]]]:
         model.load_state_dict(state)
         model.to(DEVICE).eval()
         
+        # Cache the model
+        if use_cache:
+            _cached_model = model
+            _cached_labels = labels
+            _cached_metadata = best
+        
         logger.info("Model loaded successfully")
         return model, labels, best
     
@@ -90,8 +111,8 @@ def preprocess_pil(img: Image.Image, size: int = 256) -> torch.Tensor:
         ValueError: If image cannot be processed
     """
     try:
-        # Convert to RGB and resize
-        img = img.convert('RGB').resize((size, size), Image.Resampling.LANCZOS)
+        # Convert to RGB and resize (using LANCZOS for compatibility)
+        img = img.convert('RGB').resize((size, size), Image.LANCZOS)
         
         # Convert to array and normalize to [0, 1]
         arr = np.array(img).astype(np.float32) / 255.0
