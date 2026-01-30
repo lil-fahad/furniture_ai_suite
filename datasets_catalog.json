@@ -1,18 +1,42 @@
 [
   {
     "slug": "prashantsingh001/bedroom-interior-dataset",
-    "dest": "data/raw/bedroom_interiors"
+    "dest": "data/raw/bedroom_interiors",
+    "description": "Bedroom interior design styles and layouts"
   },
   {
     "slug": "robinreni/house-rooms-image-dataset",
-    "dest": "data/raw/house_rooms"
+    "dest": "data/raw/house_rooms",
+    "description": "Various house room types and configurations"
   },
   {
     "slug": "amoghjrules/indoor-scenes-images",
-    "dest": "data/raw/indoor_scenes"
+    "dest": "data/raw/indoor_scenes",
+    "description": "Indoor scene recognition dataset"
   },
   {
     "slug": "udaysankarmukherjee/furniture-image-dataset",
-    "dest": "data/raw/furniture_images"
+    "dest": "data/raw/furniture_images",
+    "description": "Furniture classification dataset"
+  },
+  {
+    "slug": "kamilfranek/architecture-images",
+    "dest": "data/raw/architecture",
+    "description": "Architectural styles and interior designs"
+  },
+  {
+    "slug": "niharika41298/withwithout-furniture",
+    "dest": "data/raw/furniture_detection",
+    "description": "Rooms with and without furniture for detection"
+  },
+  {
+    "slug": "tannergi/home-depot-product-image-dataset",
+    "dest": "data/raw/home_depot_furniture",
+    "description": "Extensive home depot furniture catalog"
+  },
+  {
+    "slug": "paramaggarwal/fashion-product-images-dataset",
+    "dest": "data/raw/product_images",
+    "description": "Product images including home decor items"
   }
 ]

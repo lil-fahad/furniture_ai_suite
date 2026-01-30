@@ -7,10 +7,13 @@ A state-of-the-art interior design classification system powered by deep learnin
 - **Multi-Source Dataset Integration**: Automatic download and integration of multiple interior design datasets from Kaggle
 - **Advanced Data Processing**: Intelligent image validation, deduplication, and quality assurance
 - **State-of-the-Art Models**: Training with multiple architectures (EfficientNet, ConvNeXt, Swin Transformer)
+- **Floor Plan Analysis**: Advanced floor plan reading and room detection capabilities
+- **Furniture Recommendations**: AI-powered furniture recommendations based on room analysis
 - **Professional API**: RESTful API with comprehensive error handling and validation
 - **Model Export**: Multiple format support (PyTorch, TorchScript, ONNX) for flexible deployment
 - **Comprehensive Logging**: Detailed logging throughout the entire pipeline
 - **High-Quality Documentation**: Well-documented codebase with type hints and docstrings
+- **Extensive Furniture Database**: Large collection of furniture and interior design images
 
 ## 🚀 Quick Start
 
@@ -86,13 +89,27 @@ Classifies interior design images:
 - Returns top-K predictions with confidence scores
 - Uses the best trained model automatically
 
-#### 5. **GET /labels** - View Categories
+#### 5. **POST /analyze-floor-plan** - Analyze Floor Plans (NEW)
+Analyzes floor plan images to extract architectural information:
+- Detects individual rooms and their types
+- Identifies walls, doors, and windows
+- Estimates room dimensions and areas
+- Provides furniture recommendations for each room
+- Optional visualization output
+
+#### 6. **POST /furniture-recommendations** - Get Furniture Suggestions (NEW)
+Get AI-powered furniture recommendations:
+- Specify room type and size
+- Receive tailored furniture suggestions
+- Prioritized recommendations (essential, recommended, optional)
+
+#### 7. **GET /labels** - View Categories
 Returns all possible classification categories.
 
-#### 6. **GET /results** - View Training Results
+#### 8. **GET /results** - View Training Results
 Shows performance metrics for all trained models.
 
-#### 7. **GET /health** - Health Check
+#### 9. **GET /health** - Health Check
 Verifies API service status.
 
 ## 🏗️ Architecture
@@ -114,14 +131,50 @@ Image Upload → Preprocessing → Model Prediction → Top-K Results
 
 ## 📊 Dataset Sources
 
-The application integrates multiple high-quality interior design datasets:
+The application integrates multiple high-quality interior design and furniture datasets:
 
-1. **Bedroom Interior Dataset** - Bedroom design styles
-2. **House Rooms Dataset** - Various room types
+1. **Bedroom Interior Dataset** - Bedroom design styles and layouts
+2. **House Rooms Dataset** - Various room types and configurations
 3. **Indoor Scenes** - General indoor environments
-4. **Furniture Images** - Furniture classification
+4. **Furniture Images** - Furniture classification dataset
+5. **Architecture Images** - Architectural styles and interior designs (NEW)
+6. **Furniture Detection Dataset** - Rooms with and without furniture (NEW)
+7. **Home Depot Furniture** - Extensive home depot furniture catalog (NEW)
+8. **Product Images** - Additional home decor and furniture items (NEW)
 
 All datasets are automatically downloaded and integrated from Kaggle.
+
+## 🏗️ Floor Plan Analysis
+
+The system now includes advanced floor plan analysis capabilities:
+
+### Features
+- **Room Detection**: Automatically identify individual rooms in floor plans
+- **Room Classification**: Estimate room types (bedroom, living room, kitchen, etc.)
+- **Dimension Analysis**: Calculate room areas and aspect ratios
+- **Wall Detection**: Identify walls and boundaries
+- **Opening Detection**: Detect doors and windows
+- **Furniture Recommendations**: Get AI-powered furniture suggestions for each room
+- **Visualization**: Generate annotated floor plan images
+
+### Usage Example
+```python
+# Analyze a floor plan
+with open("floor_plan.jpg", "rb") as f:
+    response = requests.post(
+        "http://localhost:8000/analyze-floor-plan",
+        files={"file": f},
+        params={"save_visualization": True}
+    )
+
+results = response.json()
+for room in results["analysis"]["rooms"]:
+    print(f"Room {room['id']}: {room['type']}")
+    print(f"  Area: {room['area_pixels']} pixels")
+    print(f"  Furniture recommendations:")
+    for item in room["furniture_recommendations"]:
+        print(f"    - {item['item']} ({item['priority']})")
+```
 
 ## 🔧 Technical Details
 

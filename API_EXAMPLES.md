@@ -39,6 +39,14 @@ curl http://localhost:8000/labels
 curl -X POST http://localhost:8000/predict \
   -F "file=@/path/to/your/image.jpg" \
   -F "topk=5"
+
+# 7. Analyze a floor plan (NEW)
+curl -X POST http://localhost:8000/analyze-floor-plan \
+  -F "file=@/path/to/floor_plan.jpg" \
+  -F "save_visualization=true"
+
+# 8. Get furniture recommendations (NEW)
+curl -X GET "http://localhost:8000/furniture-recommendations?room_type=bedroom&area_sqm=20"
 ```
 
 ### Using Python
@@ -80,6 +88,32 @@ predictions = response.json()
 print("Predictions:")
 for pred in predictions["predictions"]:
     print(f"  {pred['label']}: {pred['confidence']:.2%} (Rank {pred['rank']})")
+
+# Analyze floor plan (NEW)
+with open("floor_plan.jpg", "rb") as f:
+    files = {"file": f}
+    params = {"save_visualization": True}
+    response = requests.post(f"{BASE_URL}/analyze-floor-plan", files=files, params=params)
+
+floor_plan_analysis = response.json()
+print(f"Detected {floor_plan_analysis['analysis']['total_rooms']} rooms")
+for room in floor_plan_analysis['analysis']['rooms']:
+    print(f"\nRoom {room['id']}: {room['type']}")
+    print(f"  Area: {room['area_pixels']} pixels")
+    if 'furniture_recommendations' in room:
+        print("  Recommended furniture:")
+        for item in room['furniture_recommendations']:
+            print(f"    - {item['item']} ({item['priority']})")
+
+# Get furniture recommendations (NEW)
+response = requests.get(
+    f"{BASE_URL}/furniture-recommendations",
+    params={"room_type": "bedroom", "area_sqm": 20}
+)
+recommendations = response.json()
+print(f"\nFurniture recommendations for {recommendations['room_type']}:")
+for item in recommendations['recommendations']:
+    print(f"  - {item['item']} ({item['priority']})")
 ```
 
 ### Using JavaScript (fetch)
@@ -115,6 +149,35 @@ async function predictImage(imageFile) {
     
     const data = await response.json();
     console.log('Predictions:', data.predictions);
+    return data;
+}
+
+// Analyze floor plan (NEW)
+async function analyzeFloorPlan(floorPlanFile, saveVisualization = true) {
+    const formData = new FormData();
+    formData.append('file', floorPlanFile);
+    
+    const response = await fetch(
+        `${BASE_URL}/analyze-floor-plan?save_visualization=${saveVisualization}`,
+        {
+            method: 'POST',
+            body: formData
+        }
+    );
+    
+    const data = await response.json();
+    console.log('Floor plan analysis:', data.analysis);
+    return data;
+}
+
+// Get furniture recommendations (NEW)
+async function getFurnitureRecommendations(roomType, areaSqm) {
+    const response = await fetch(
+        `${BASE_URL}/furniture-recommendations?room_type=${roomType}&area_sqm=${areaSqm}`
+    );
+    
+    const data = await response.json();
+    console.log('Recommendations:', data.recommendations);
     return data;
 }
 
@@ -265,6 +328,76 @@ async function getResults() {
     "ckpt": "models/best_efficientnet_b0.pth",
     "epochs_trained": 12
   }
+}
+```
+
+### Floor Plan Analysis Response (NEW)
+
+```json
+{
+  "ok": true,
+  "message": "Floor plan analysis completed successfully",
+  "filename": "house_plan.jpg",
+  "analysis": {
+    "total_rooms": 5,
+    "total_area_pixels": 345600,
+    "wall_count": 23,
+    "rooms": [
+      {
+        "id": 0,
+        "type": "living_room",
+        "area_pixels": 89500,
+        "bounding_box": {"x": 120, "y": 80, "width": 450, "height": 320},
+        "centroid": {"x": 345, "y": 240},
+        "aspect_ratio": 1.41,
+        "furniture_recommendations": [
+          {"item": "sofa", "priority": "essential"},
+          {"item": "coffee_table", "priority": "essential"},
+          {"item": "tv_stand", "priority": "recommended"},
+          {"item": "armchair", "priority": "optional"}
+        ]
+      },
+      {
+        "id": 1,
+        "type": "bedroom",
+        "area_pixels": 67200,
+        "bounding_box": {"x": 600, "y": 100, "width": 380, "height": 290},
+        "centroid": {"x": 790, "y": 245},
+        "aspect_ratio": 1.31,
+        "furniture_recommendations": [
+          {"item": "bed", "priority": "essential"},
+          {"item": "nightstand", "priority": "recommended"},
+          {"item": "wardrobe", "priority": "essential"}
+        ]
+      }
+    ],
+    "doors": [
+      {"x1": 300, "y1": 400, "x2": 360, "y2": 400, "length": 60.0},
+      {"x1": 580, "y1": 240, "x2": 640, "y2": 240, "length": 60.0}
+    ],
+    "windows": [
+      {"x1": 150, "y1": 80, "x2": 200, "y2": 80, "length": 50.0},
+      {"x1": 720, "y1": 100, "x2": 765, "y2": 100, "length": 45.0}
+    ]
+  },
+  "visualization_path": "artifacts/floor_plans/analyzed_house_plan.jpg"
+}
+```
+
+### Furniture Recommendations Response (NEW)
+
+```json
+{
+  "ok": true,
+  "room_type": "bedroom",
+  "area_sqm": 20,
+  "recommendations": [
+    {"item": "bed", "priority": "essential"},
+    {"item": "nightstand", "priority": "recommended"},
+    {"item": "wardrobe", "priority": "essential"},
+    {"item": "dresser", "priority": "optional"}
+  ],
+  "total_items": 4
 }
 ```
 

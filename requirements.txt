@@ -17,3 +17,4 @@ onnxruntime
 pyyaml
 python-multipart
 httpx
+opencv-python

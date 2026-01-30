@@ -19,6 +19,7 @@ from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download
 from prepare_data import scan_images, unify_and_clean, export_clean_256
 from train_multi import train_all
 from infer import predict_bytes
+from floor_plan_analyzer import analyze_floor_plan_bytes, FloorPlanAnalyzer
 
 # Configure logging
 logging.basicConfig(
@@ -442,4 +443,145 @@ def results() -> Dict[str, Any]:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to read results: {str(e)}"
+        )
+
+
+@app.post("/analyze-floor-plan", tags=["Floor Plan Analysis"])
+async def analyze_floor_plan(
+    file: UploadFile = File(..., description="Floor plan image file"),
+    save_visualization: bool = Query(False, description="Save annotated visualization")
+) -> Dict[str, Any]:
+    """Analyze a floor plan image to detect rooms and architectural elements.
+    
+    This endpoint processes floor plan images to:
+    - Detect individual rooms
+    - Identify walls, doors, and windows
+    - Estimate room types
+    - Provide furniture recommendations for each room
+    
+    Args:
+        file: Floor plan image file (JPEG, PNG, etc.)
+        save_visualization: Whether to save an annotated visualization
+        
+    Returns:
+        Dictionary with complete floor plan analysis including:
+        - Detected rooms with types and dimensions
+        - Door and window locations
+        - Furniture recommendations per room
+        
+    Raises:
+        HTTPException: If file is invalid or analysis fails.
+    """
+    if not file.filename:
+        logger.error("No filename provided")
+        raise HTTPException(
+            status_code=400,
+            detail="No file provided"
+        )
+    
+    # Validate file type
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff'}
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in allowed_extensions:
+        logger.error(f"Invalid file type: {file_ext}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+        )
+    
+    logger.info(f"Processing floor plan analysis for file: {file.filename}")
+    
+    try:
+        image_bytes = await file.read()
+        
+        if len(image_bytes) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Empty file received"
+            )
+        
+        # Prepare output path if visualization requested
+        output_path = None
+        if save_visualization:
+            Path("artifacts/floor_plans").mkdir(parents=True, exist_ok=True)
+            output_path = f"artifacts/floor_plans/analyzed_{Path(file.filename).stem}.jpg"
+        
+        # Analyze floor plan
+        results = analyze_floor_plan_bytes(image_bytes, output_path)
+        
+        logger.info(f"Floor plan analysis complete. Found {results['total_rooms']} rooms")
+        
+        response = {
+            "ok": True,
+            "message": "Floor plan analysis completed successfully",
+            "filename": file.filename,
+            "analysis": results
+        }
+        
+        if output_path:
+            response["visualization_path"] = output_path
+        
+        return response
+        
+    except ValueError as e:
+        logger.error(f"Invalid floor plan image: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid floor plan image: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Floor plan analysis failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Floor plan analysis failed: {str(e)}"
+        )
+
+
+@app.post("/furniture-recommendations", tags=["Floor Plan Analysis"])
+async def get_furniture_recommendations(
+    room_type: str = Query(..., description="Type of room (bedroom, living_room, etc.)"),
+    area_sqm: float = Query(..., ge=5, le=200, description="Room area in square meters")
+) -> Dict[str, Any]:
+    """Get furniture recommendations for a specific room type and size.
+    
+    Args:
+        room_type: Type of room (bedroom, living_room, dining_room, kitchen, bathroom)
+        area_sqm: Room area in square meters
+        
+    Returns:
+        Dictionary with furniture recommendations
+        
+    Raises:
+        HTTPException: If parameters are invalid
+    """
+    logger.info(f"Getting furniture recommendations for {room_type} ({area_sqm} sqm)")
+    
+    # Convert sqm to approximate pixels (rough estimation)
+    pixels_per_sqm = 1000  # Rough approximation
+    area_pixels = int(area_sqm * pixels_per_sqm)
+    
+    # Create mock room object
+    room = {
+        "type": room_type.lower().replace(" ", "_"),
+        "area_pixels": area_pixels
+    }
+    
+    try:
+        analyzer = FloorPlanAnalyzer()
+        recommendations = analyzer.recommend_furniture(room)
+        
+        logger.info(f"Generated {len(recommendations)} furniture recommendations")
+        
+        return {
+            "ok": True,
+            "room_type": room_type,
+            "area_sqm": area_sqm,
+            "recommendations": recommendations,
+            "total_items": len(recommendations)
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate recommendations: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate recommendations: {str(e)}"
         )
