@@ -49,3 +49,13 @@ dist/
 build/
 *.egg-info/
 
+# Replit specific
+.config/
+.cache/
+.upm/
+.breakpoints
+replit.nix.backup
+
+# Environment files
+.env
+.env.local

@@ -45,6 +45,14 @@ Set up your Kaggle credentials (choose one method):
 
 ### Running the Application
 
+**On Replit:** 🌐
+```bash
+# Simply click the "Run" button or use:
+bash setup_replit.sh
+# Then the app starts automatically
+```
+See [REPLIT_GUIDE.md](REPLIT_GUIDE.md) for detailed Replit deployment instructions.
+
 **Windows:**
 ```bash
 run_windows.bat
@@ -307,10 +315,35 @@ The application provides detailed error messages for:
 
 ## 🌐 Deployment Ready
 
+### Deployment Options
+
+#### 1. **Replit Deployment** 🌐 (ربط مع Replit)
+
+Deploy easily on Replit for quick demos and testing:
+
+**Quick Start:**
+1. Import from GitHub: `https://github.com/lil-fahad/furniture_ai_suite`
+2. Click "Run" button
+3. Access API at your Replit URL
+
+**Features Available:**
+- ✅ Alibaba product search
+- ✅ Floor plan analysis
+- ✅ Furniture recommendations
+- ✅ API documentation
+
+**Read the complete guide:** [REPLIT_GUIDE.md](REPLIT_GUIDE.md)
+
+**Note:** Heavy ML training requires local deployment with GPU.
+
+#### 2. **Local/Server Deployment**
+
 Multiple export formats for various deployment scenarios:
 - **PyTorch (.pth)**: Full model flexibility
 - **TorchScript (.ts)**: Production deployment
 - **ONNX (.onnx)**: Cross-platform compatibility
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment options (Docker, AWS, GCP, Azure).
 
 ## 🧪 Testing & Verification (اختبار والتحقق)
 
