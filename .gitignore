@@ -1,9 +1,15 @@
 # Virtual environment
 .venv/
+venv/
+env/
+ENV/
 
 # Python compiled files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
 # Model outputs
 models/
@@ -12,6 +18,34 @@ artifacts/
 # Datasets
 data/
 
+# Kaggle credentials
+kaggle.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
 # OS-specific files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+

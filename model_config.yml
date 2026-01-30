@@ -1,19 +1,41 @@
+# Model Training Configuration
+# This file contains all configurable parameters for the training pipeline
+
+# Data Configuration
 data_dir: "data/clean256"
 img_size: 256
+min_image_size: 256
+
+# Training Hyperparameters
 batch_size: 64
 epochs: 20
 patience: 5
 num_workers: 2
 learning_rate: 0.0003
 weight_decay: 0.0001
+
+# Data Augmentation
 mixup_alpha: 0.2
 cutmix_alpha: 0.0
 label_smoothing: 0.1
+
+# Model Architectures
+# List of model backbones to train and compare
 backbones:
   - efficientnet_b0
   - convnext_tiny
   - swin_tiny_patch4_window7_224
-top_k: 3
+
+# Selection and Export
+top_k: 3  # Number of best models to keep
 artifacts_dir: "artifacts"
 models_dir: "models"
 logs_path: "artifacts/logs.csv"
+
+# Validation Split
+validation_ratio: 0.2
+random_seed: 42
+
+# Device Configuration
+# Will automatically use CUDA if available, otherwise CPU
+# Set CUDA_VISIBLE_DEVICES environment variable to control GPU selection
