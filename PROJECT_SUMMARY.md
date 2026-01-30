@@ -30,7 +30,18 @@ This project has been completely rebuilt to professional standards as a state-of
 - **Visualization**: Annotated floor plan image generation
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 
-### 4. Expanded Furniture Datasets (كمية كبيرة من بيانات الأثاث) ✨ NEW
+### 4. Alibaba Furniture Integration (خاصية سحب قطع اثاث من Alibaba) ✨ NEW
+- **Product Search**: Search Alibaba for furniture by keywords
+- **Advanced Filtering**: Filter by category, price range, and more
+- **Supplier Information**: View supplier details, ratings, and locations
+- **Bulk Pricing**: Access wholesale pricing tiers
+- **Product Details**: Comprehensive specifications and reviews
+- **Caching System**: Intelligent caching to reduce API calls
+- **Rate Limiting**: Ethical scraping with configurable delays
+- **Data Export**: Save product catalogs to JSON files
+- **Mock Data**: Demonstration mode (production requires API credentials)
+
+### 5. Expanded Furniture Datasets (كمية كبيرة من بيانات الأثاث) ✨ NEW
 Increased from 4 to 8 comprehensive datasets:
 1. Bedroom Interior Dataset
 2. House Rooms Dataset
@@ -44,6 +55,10 @@ Increased from 4 to 8 comprehensive datasets:
 ### 5. New API Endpoints
 - **POST /analyze-floor-plan**: Analyze floor plans, detect rooms, get recommendations
 - **POST /furniture-recommendations**: Get furniture suggestions for room types
+- **POST /alibaba/search**: Search Alibaba for furniture products
+- **GET /alibaba/product/{id}**: Get detailed product information
+- **POST /alibaba/save-products**: Save product catalog to file
+- **GET /alibaba/categories**: List available furniture categories
 - Enhanced existing endpoints with better validation and responses
 
 ### 6. Documentation Suite
@@ -92,7 +107,14 @@ Increased from 4 to 8 comprehensive datasets:
 - Progress tracking
 - Pillow compatibility fixes
 
-#### floor_plan_analyzer.py (NEW)
+#### alibaba_scraper.py (NEW)
+- Alibaba product search
+- Price and category filtering
+- Caching system
+- Rate limiting
+- Product detail fetching
+- Supplier information
+- Data export functionality
 - Complete floor plan analysis
 - Room detection algorithm
 - Furniture recommendation system
@@ -136,6 +158,12 @@ Increased from 4 to 8 comprehensive datasets:
 - `POST /analyze-floor-plan` - Analyze floor plans
 - `POST /furniture-recommendations` - Get furniture suggestions
 
+### Alibaba Integration (NEW)
+- `POST /alibaba/search` - Search Alibaba products
+- `GET /alibaba/product/{id}` - Get product details
+- `POST /alibaba/save-products` - Save product catalog
+- `GET /alibaba/categories` - List categories
+
 ### Information
 - `GET /labels` - View classification categories
 - `GET /results` - View training results
@@ -162,6 +190,7 @@ Increased from 4 to 8 comprehensive datasets:
 - ✅ 8 comprehensive datasets
 - ✅ Floor plan analysis
 - ✅ Furniture recommendations
+- ✅ Alibaba product search
 - ✅ Multiple model architectures
 - ✅ Model caching for performance
 
@@ -212,10 +241,11 @@ The Interior Design AI Suite has been comprehensively rebuilt to meet profession
 ✅ **Professional Code Quality**: Type hints, documentation, logging, error handling
 ✅ **Advanced Features**: Floor plan analysis and furniture recommendations  
 ✅ **Extensive Datasets**: 8 comprehensive furniture and interior design datasets
+✅ **Alibaba Integration**: Search and retrieve furniture products from Alibaba marketplace
 ✅ **Production Ready**: Security, performance, cross-platform compatibility
 ✅ **Well Documented**: Complete guides for API usage, deployment, and contribution
 
-The application now provides a professional-grade solution for interior design classification and analysis, with cutting-edge AI capabilities for both image classification and floor plan analysis.
+The application now provides a professional-grade solution for interior design classification and analysis, with cutting-edge AI capabilities for image classification, floor plan analysis, and furniture product search.
 
 ---
 
