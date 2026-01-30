@@ -47,6 +47,18 @@ curl -X POST http://localhost:8000/analyze-floor-plan \
 
 # 8. Get furniture recommendations (NEW)
 curl -X GET "http://localhost:8000/furniture-recommendations?room_type=bedroom&area_sqm=20"
+
+# 9. Search Alibaba for furniture (NEW)
+curl -X POST "http://localhost:8000/alibaba/search?keyword=sofa&category=sofa&min_price=100&max_price=1000&page=1"
+
+# 10. Get Alibaba product details (NEW)
+curl -X GET "http://localhost:8000/alibaba/product/ALI-SOFA-000001"
+
+# 11. Save Alibaba products to file (NEW)
+curl -X POST "http://localhost:8000/alibaba/save-products?keyword=dining%20table&max_results=50"
+
+# 12. Get Alibaba categories (NEW)
+curl -X GET "http://localhost:8000/alibaba/categories"
 ```
 
 ### Using Python
@@ -114,6 +126,46 @@ recommendations = response.json()
 print(f"\nFurniture recommendations for {recommendations['room_type']}:")
 for item in recommendations['recommendations']:
     print(f"  - {item['item']} ({item['priority']})")
+
+# Search Alibaba for furniture (NEW)
+response = requests.post(
+    f"{BASE_URL}/alibaba/search",
+    params={
+        "keyword": "modern sofa",
+        "category": "sofa",
+        "min_price": 100,
+        "max_price": 1000,
+        "page": 1
+    }
+)
+alibaba_results = response.json()
+print(f"\nFound {len(alibaba_results['results']['products'])} Alibaba products:")
+for product in alibaba_results['results']['products'][:3]:
+    print(f"  - {product['title']}: ${product['price']['amount']}")
+    print(f"    Supplier: {product['supplier']['name']}")
+
+# Get Alibaba product details (NEW)
+product_id = "ALI-SOFA-000001"
+response = requests.get(f"{BASE_URL}/alibaba/product/{product_id}")
+product_details = response.json()
+print(f"\nProduct Details:")
+print(f"  Reviews: {product_details['product']['reviews']['count']}")
+print(f"  Rating: {product_details['product']['reviews']['average_rating']}")
+
+# Save Alibaba products (NEW)
+response = requests.post(
+    f"{BASE_URL}/alibaba/save-products",
+    params={"keyword": "dining table", "max_results": 50}
+)
+save_result = response.json()
+print(f"\nSaved {save_result['total_saved']} products to {save_result['file_path']}")
+
+# Get Alibaba categories (NEW)
+response = requests.get(f"{BASE_URL}/alibaba/categories")
+categories = response.json()
+print(f"\nAvailable categories: {len(categories['categories'])}")
+for cat in categories['categories'][:5]:
+    print(f"  - {cat['name']}: {cat['description']}")
 ```
 
 ### Using JavaScript (fetch)

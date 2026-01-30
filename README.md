@@ -9,6 +9,7 @@ A state-of-the-art interior design classification system powered by deep learnin
 - **State-of-the-Art Models**: Training with multiple architectures (EfficientNet, ConvNeXt, Swin Transformer)
 - **Floor Plan Analysis**: Advanced floor plan reading and room detection capabilities
 - **Furniture Recommendations**: AI-powered furniture recommendations based on room analysis
+- **Alibaba Integration**: Search and retrieve furniture products from Alibaba marketplace
 - **Professional API**: RESTful API with comprehensive error handling and validation
 - **Model Export**: Multiple format support (PyTorch, TorchScript, ONNX) for flexible deployment
 - **Comprehensive Logging**: Detailed logging throughout the entire pipeline
@@ -109,7 +110,31 @@ Returns all possible classification categories.
 #### 8. **GET /results** - View Training Results
 Shows performance metrics for all trained models.
 
-#### 9. **GET /health** - Health Check
+#### 9. **POST /alibaba/search** - Search Alibaba Furniture (NEW)
+Search for furniture products on Alibaba:
+- Search by keyword (sofa, table, chair, etc.)
+- Filter by category, price range
+- Paginated results with product details
+- Cached for performance
+- Mock data for demonstration (production requires API access)
+
+#### 10. **GET /alibaba/product/{id}** - Get Product Details (NEW)
+Get detailed information about specific Alibaba product:
+- Full specifications and pricing
+- Supplier information and ratings
+- Bulk pricing tiers
+- Customer reviews and ratings
+
+#### 11. **POST /alibaba/save-products** - Save Product Catalog (NEW)
+Save searched products to local JSON file:
+- Build local furniture catalog
+- Batch product download
+- Organized by search keyword
+
+#### 12. **GET /alibaba/categories** - List Furniture Categories (NEW)
+Get available furniture categories for search
+
+#### 13. **GET /health** - Health Check
 Verifies API service status.
 
 ## 🏗️ Architecture
@@ -144,7 +169,59 @@ The application integrates multiple high-quality interior design and furniture d
 
 All datasets are automatically downloaded and integrated from Kaggle.
 
-## 🏗️ Floor Plan Analysis
+## 🛒 Alibaba Integration (NEW)
+
+The system now includes integration with Alibaba to search and retrieve furniture products:
+
+### Features
+- **Product Search**: Search furniture by keywords and categories
+- **Price Filtering**: Filter products by price range
+- **Supplier Information**: View supplier ratings and locations
+- **Bulk Pricing**: Access wholesale pricing tiers
+- **Caching System**: Reduce API calls with intelligent caching
+- **Rate Limiting**: Ethical scraping with configurable rate limits
+- **Product Details**: Comprehensive product specifications
+
+### Usage Example
+```python
+# Search for sofas on Alibaba
+response = requests.post(
+    "http://localhost:8000/alibaba/search",
+    params={
+        "keyword": "modern sofa",
+        "category": "sofa",
+        "min_price": 100,
+        "max_price": 500,
+        "page": 1
+    }
+)
+
+products = response.json()["results"]["products"]
+for product in products:
+    print(f"{product['title']}: ${product['price']['amount']}")
+    print(f"  Supplier: {product['supplier']['name']}")
+    print(f"  MOQ: {product['moq']} pieces")
+
+# Get detailed product info
+product_id = products[0]["id"]
+response = requests.get(f"http://localhost:8000/alibaba/product/{product_id}")
+details = response.json()["product"]
+
+# Save products to file
+response = requests.post(
+    "http://localhost:8000/alibaba/save-products",
+    params={"keyword": "dining table", "max_results": 100}
+)
+print(f"Saved to: {response.json()['file_path']}")
+```
+
+### Important Notes
+- **Demo Mode**: Current implementation uses simulated data for demonstration
+- **Production Use**: Requires proper Alibaba API credentials or scraping authorization
+- **Terms of Service**: Must comply with Alibaba's terms when scraping
+- **Rate Limiting**: Built-in rate limiting to prevent server overload
+- **Caching**: Responses cached for 24 hours to reduce API calls
+
 
 The system now includes advanced floor plan analysis capabilities:
 

@@ -20,6 +20,7 @@ from prepare_data import scan_images, unify_and_clean, export_clean_256
 from train_multi import train_all
 from infer import predict_bytes
 from floor_plan_analyzer import analyze_floor_plan_bytes, FloorPlanAnalyzer
+from alibaba_scraper import AlibabaFurnitureScraper, search_alibaba_furniture
 
 # Configure logging
 logging.basicConfig(
@@ -589,3 +590,193 @@ async def get_furniture_recommendations(
             status_code=500,
             detail=f"Failed to generate recommendations: {str(e)}"
         )
+
+
+@app.post("/alibaba/search", tags=["Alibaba Integration"])
+async def search_alibaba(
+    keyword: str = Query(..., min_length=2, description="Search keyword for furniture"),
+    category: Optional[str] = Query(None, description="Furniture category filter"),
+    min_price: Optional[float] = Query(None, ge=0, description="Minimum price in USD"),
+    max_price: Optional[float] = Query(None, ge=0, description="Maximum price in USD"),
+    page: int = Query(1, ge=1, le=10, description="Page number"),
+    page_size: int = Query(20, ge=1, le=50, description="Results per page")
+) -> Dict[str, Any]:
+    """Search for furniture products on Alibaba.
+    
+    This endpoint searches Alibaba for furniture products with filtering options.
+    Results are cached to improve performance and reduce load on Alibaba servers.
+    
+    Args:
+        keyword: Search keyword (e.g., "sofa", "dining table", "office chair")
+        category: Optional category filter
+        min_price: Minimum price filter in USD
+        max_price: Maximum price filter in USD
+        page: Page number for pagination
+        page_size: Number of results per page
+        
+    Returns:
+        Dictionary with search results including products, pricing, and supplier info
+        
+    Note:
+        This uses simulated data for demonstration. In production:
+        - Requires proper Alibaba API credentials or scraping authorization
+        - Should implement proxy rotation for large-scale scraping
+        - Must comply with Alibaba's terms of service
+        
+    Raises:
+        HTTPException: If search fails or parameters are invalid
+    """
+    logger.info(f"Searching Alibaba: keyword={keyword}, page={page}")
+    
+    # Validate price range
+    if min_price and max_price and min_price > max_price:
+        raise HTTPException(
+            status_code=400,
+            detail="Minimum price cannot be greater than maximum price"
+        )
+    
+    try:
+        scraper = AlibabaFurnitureScraper(rate_limit_seconds=1.0)
+        
+        results = scraper.search_furniture(
+            keyword=keyword,
+            category=category,
+            min_price=min_price,
+            max_price=max_price,
+            page=page,
+            page_size=page_size,
+            use_cache=True
+        )
+        
+        logger.info(f"Found {len(results['products'])} products for '{keyword}'")
+        
+        return {
+            "ok": True,
+            "message": "Search completed successfully",
+            "query": keyword,
+            "category": category,
+            "results": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Alibaba search failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to search Alibaba: {str(e)}"
+        )
+
+
+@app.get("/alibaba/product/{product_id}", tags=["Alibaba Integration"])
+async def get_alibaba_product(
+    product_id: str = Path(..., description="Alibaba product ID")
+) -> Dict[str, Any]:
+    """Get detailed information about a specific Alibaba product.
+    
+    Args:
+        product_id: Unique Alibaba product identifier
+        
+    Returns:
+        Detailed product information including specifications, pricing, and reviews
+        
+    Raises:
+        HTTPException: If product not found or fetch fails
+    """
+    logger.info(f"Fetching Alibaba product details: {product_id}")
+    
+    try:
+        scraper = AlibabaFurnitureScraper()
+        product_details = scraper.get_product_details(product_id)
+        
+        logger.info(f"Retrieved details for product: {product_id}")
+        
+        return {
+            "ok": True,
+            "message": "Product details retrieved successfully",
+            "product": product_details
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch product {product_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch product details: {str(e)}"
+        )
+
+
+@app.post("/alibaba/save-products", tags=["Alibaba Integration"])
+async def save_alibaba_products(
+    keyword: str = Query(..., description="Search keyword to save products for"),
+    max_results: int = Query(100, ge=1, le=500, description="Maximum products to save")
+) -> Dict[str, Any]:
+    """Search and save Alibaba furniture products to a file.
+    
+    This endpoint searches for products and saves them to a JSON file for later use.
+    Useful for building a local furniture catalog from Alibaba.
+    
+    Args:
+        keyword: Search keyword for furniture
+        max_results: Maximum number of products to save
+        
+    Returns:
+        Dictionary with save status and file path
+        
+    Raises:
+        HTTPException: If search or save fails
+    """
+    logger.info(f"Saving Alibaba products: keyword={keyword}, max={max_results}")
+    
+    try:
+        # Search for products
+        results = search_alibaba_furniture(
+            keyword=keyword,
+            max_results=max_results
+        )
+        
+        # Save to file
+        scraper = AlibabaFurnitureScraper()
+        output_path = scraper.save_products_to_file(
+            products=results["products"],
+            output_path=f"data/alibaba_{keyword.replace(' ', '_')}.json"
+        )
+        
+        logger.info(f"Saved {len(results['products'])} products to {output_path}")
+        
+        return {
+            "ok": True,
+            "message": "Products saved successfully",
+            "keyword": keyword,
+            "total_saved": len(results["products"]),
+            "file_path": output_path
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to save products: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save products: {str(e)}"
+        )
+
+
+@app.get("/alibaba/categories", tags=["Alibaba Integration"])
+async def get_alibaba_categories() -> Dict[str, Any]:
+    """Get available furniture categories for Alibaba search.
+    
+    Returns:
+        List of available furniture categories
+    """
+    categories = [
+        {"id": "sofa", "name": "Sofas & Couches", "description": "Living room seating"},
+        {"id": "table", "name": "Tables", "description": "Dining, coffee, and console tables"},
+        {"id": "chair", "name": "Chairs", "description": "Office, dining, and accent chairs"},
+        {"id": "bed", "name": "Beds & Frames", "description": "Bedroom furniture"},
+        {"id": "wardrobe", "name": "Wardrobes & Closets", "description": "Storage solutions"},
+        {"id": "desk", "name": "Desks", "description": "Office and study desks"},
+        {"id": "cabinet", "name": "Cabinets", "description": "Storage cabinets and shelving"},
+        {"id": "outdoor", "name": "Outdoor Furniture", "description": "Patio and garden furniture"}
+    ]
+    
+    return {
+        "ok": True,
+        "total_categories": len(categories),
+        "categories": categories
+    }
