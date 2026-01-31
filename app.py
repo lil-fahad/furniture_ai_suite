@@ -15,7 +15,7 @@ from typing import Dict, Any, List
 
 import httpx
 
-from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download
+from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download, huggingface_clone
 from prepare_data import scan_images, unify_and_clean, export_clean_256
 from train_multi import train_all
 from infer import predict_bytes
@@ -155,16 +155,26 @@ def download_all(skip_if_exists: bool = True) -> Dict[str, Any]:
     
     for item in catalog:
         try:
-            kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
+            source = item.get("source", "kaggle")  # Default to kaggle for backward compatibility
+            
+            if source == "huggingface":
+                # Clone from Hugging Face
+                dataset_id = item["repo_url"]
+                huggingface_clone(item["repo_url"], item["dest"], skip_if_exists=skip_if_exists)
+            else:
+                # Download from Kaggle
+                dataset_id = item["slug"]
+                kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
+            
             if skip_if_exists:
                 skipped_count += 1
             else:
                 downloaded_count += 1
         except Exception as e:
-            logger.error(f"Failed to download {item['slug']}: {str(e)}")
+            logger.error(f"Failed to download {dataset_id}: {str(e)}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to download {item['slug']}: {str(e)}"
+                detail=f"Failed to download {dataset_id}: {str(e)}"
             )
     
     logger.info(f"Dataset download completed: {downloaded_count} downloaded, {skipped_count} skipped")
@@ -175,6 +185,42 @@ def download_all(skip_if_exists: bool = True) -> Dict[str, Any]:
         "downloaded": downloaded_count,
         "skipped": skipped_count
     }
+
+@app.post("/clone-deepfurniture", tags=["Data Management"])
+def clone_deepfurniture(skip_if_exists: bool = True) -> Dict[str, Any]:
+    """Clone the DeepFurniture dataset from Hugging Face.
+    
+    This endpoint clones the DeepFurniture dataset from Hugging Face using git.
+    
+    Args:
+        skip_if_exists: Skip cloning if the dataset directory already has content.
+        
+    Returns:
+        Dictionary with success status and message.
+        
+    Raises:
+        HTTPException: If git is not available or clone fails.
+    """
+    logger.info(f"Starting DeepFurniture dataset clone (skip_if_exists={skip_if_exists})")
+    
+    repo_url = "https://huggingface.co/datasets/byliu/DeepFurniture"
+    dest = "data/raw/deepfurniture"
+    
+    try:
+        huggingface_clone(repo_url, dest, skip_if_exists=skip_if_exists)
+        logger.info("DeepFurniture dataset clone completed successfully")
+        return {
+            "ok": True,
+            "message": "DeepFurniture dataset cloned successfully",
+            "repo_url": repo_url,
+            "destination": dest
+        }
+    except Exception as e:
+        logger.error(f"Failed to clone DeepFurniture dataset: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to clone DeepFurniture dataset: {str(e)}"
+        )
 
 @app.post("/prepare", tags=["Data Management"])
 def prepare() -> Dict[str, Any]:

@@ -30,7 +30,7 @@ This suite provides **three different ways** to interact with the system:
 
 ## 🌟 Features
 
-- **Multi-Source Dataset Integration**: Automatic download and integration of multiple interior design datasets from Kaggle
+- **Multi-Source Dataset Integration**: Automatic download and integration of multiple interior design datasets from Kaggle and Hugging Face (including DeepFurniture dataset)
 - **Advanced Data Processing**: Intelligent image validation, deduplication, and quality assurance
 - **State-of-the-Art Models**: Training with multiple architectures (EfficientNet, ConvNeXt, Swin Transformer)
 - **Floor Plan Analysis**: Advanced floor plan reading and room detection capabilities
@@ -114,9 +114,17 @@ Then open your browser to: **http://localhost:8000/docs**
 The system provides a structured workflow through the Swagger UI at `/docs`:
 
 #### 1. **POST /download** - Download Datasets
-Downloads all datasets specified in `datasets_catalog.json` from Kaggle.
+Downloads all datasets specified in `datasets_catalog.json` from Kaggle and Hugging Face.
+- Supports both Kaggle datasets and Hugging Face repositories
 - Skips already downloaded datasets by default
 - Validates dataset integrity
+
+#### 1b. **POST /clone-deepfurniture** - Clone DeepFurniture Dataset
+Clone the DeepFurniture dataset from Hugging Face:
+- Clones from https://huggingface.co/datasets/byliu/DeepFurniture
+- Uses git for efficient cloning
+- Skips if already cloned by default
+- Can also be run via command line: `python clone_deepfurniture.py`
 
 #### 2. **POST /prepare** - Prepare Data
 Processes raw images for training:
@@ -208,16 +216,24 @@ Image Upload → Preprocessing → Model Prediction → Top-K Results
 
 The application integrates multiple high-quality interior design and furniture datasets:
 
+### Kaggle Datasets
 1. **Bedroom Interior Dataset** - Bedroom design styles and layouts
 2. **House Rooms Dataset** - Various room types and configurations
 3. **Indoor Scenes** - General indoor environments
 4. **Furniture Images** - Furniture classification dataset
-5. **Architecture Images** - Architectural styles and interior designs (NEW)
-6. **Furniture Detection Dataset** - Rooms with and without furniture (NEW)
-7. **Home Depot Furniture** - Extensive home depot furniture catalog (NEW)
-8. **Product Images** - Additional home decor and furniture items (NEW)
+5. **Architecture Images** - Architectural styles and interior designs
+6. **Furniture Detection Dataset** - Rooms with and without furniture
+7. **Home Depot Furniture** - Extensive home depot furniture catalog
+8. **Product Images** - Additional home decor and furniture items
 
-All datasets are automatically downloaded and integrated from Kaggle.
+### Hugging Face Datasets
+1. **DeepFurniture Dataset** - Large-scale furniture dataset from Hugging Face (NEW)
+   - Repository: https://huggingface.co/datasets/byliu/DeepFurniture
+   - Can be cloned via API endpoint `/clone-deepfurniture` or command line script
+   - Integrates seamlessly with existing data processing pipeline
+   - See [DEEPFURNITURE_GUIDE.md](DEEPFURNITURE_GUIDE.md) for detailed instructions
+
+All datasets are automatically downloaded and integrated from their respective sources.
 
 ## 🛒 Alibaba Integration (NEW)
 
