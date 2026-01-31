@@ -19,3 +19,4 @@ python-multipart
 httpx
 opencv-python
 streamlit
+datasets
