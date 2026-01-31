@@ -185,3 +185,67 @@ def kaggle_download(
         error_msg = f"Failed to download {slug}: {str(e)}"
         logger.error(error_msg)
         raise RuntimeError(error_msg)
+
+
+def huggingface_clone(
+    repo_url: str,
+    dest: str,
+    skip_if_exists: bool = True
+) -> None:
+    """Clone a Hugging Face dataset repository using git.
+    
+    Args:
+        repo_url: Hugging Face dataset URL (e.g., 'https://huggingface.co/datasets/byliu/DeepFurniture')
+        dest: Destination directory for the dataset
+        skip_if_exists: Skip clone if directory already has content
+        
+    Raises:
+        RuntimeError: If git is not available or clone fails
+        
+    Example:
+        >>> huggingface_clone("https://huggingface.co/datasets/byliu/DeepFurniture", "data/raw/deepfurniture")
+    """
+    from shutil import which
+    
+    # Ensure git is available
+    if which("git") is None:
+        error_msg = "git command not found. Please install git to clone Hugging Face datasets."
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    dest_p = Path(dest)
+    
+    # Skip if already exists and has content
+    if skip_if_exists and folder_has_content(dest, 5):
+        logger.info(f"Skipping existing dataset: {repo_url}")
+        return
+
+    # Create parent directory if needed
+    dest_p.parent.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"Cloning Hugging Face dataset: {repo_url}")
+    logger.info(f"Destination: {dest}")
+    
+    cmd = ["git", "clone", repo_url, str(dest_p)]
+    
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if result.stdout:
+            logger.info(result.stdout)
+        
+        if result.returncode != 0:
+            logger.error(result.stderr)
+            raise RuntimeError(f"Failed to clone dataset: {repo_url}\n{result.stderr}")
+        
+        logger.info(f"Successfully cloned: {repo_url}")
+        
+    except Exception as e:
+        error_msg = f"Failed to clone {repo_url}: {str(e)}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
