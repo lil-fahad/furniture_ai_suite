@@ -227,7 +227,7 @@ The application integrates multiple high-quality interior design and furniture d
 8. **Product Images** - Additional home decor and furniture items
 
 ### Hugging Face Datasets
-9. **DeepFurniture Dataset** - Large-scale furniture dataset from Hugging Face (NEW)
+1. **DeepFurniture Dataset** - Large-scale furniture dataset from Hugging Face (NEW)
    - Repository: https://huggingface.co/datasets/byliu/DeepFurniture
    - Can be cloned via API endpoint `/clone-deepfurniture` or command line script
    - Integrates seamlessly with existing data processing pipeline

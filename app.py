@@ -159,9 +159,11 @@ def download_all(skip_if_exists: bool = True) -> Dict[str, Any]:
             
             if source == "huggingface":
                 # Clone from Hugging Face
+                dataset_id = item["repo_url"]
                 huggingface_clone(item["repo_url"], item["dest"], skip_if_exists=skip_if_exists)
             else:
                 # Download from Kaggle
+                dataset_id = item["slug"]
                 kaggle_download(item["slug"], item["dest"], skip_if_exists=skip_if_exists)
             
             if skip_if_exists:
@@ -169,7 +171,6 @@ def download_all(skip_if_exists: bool = True) -> Dict[str, Any]:
             else:
                 downloaded_count += 1
         except Exception as e:
-            dataset_id = item.get("repo_url", item.get("slug", "unknown"))
             logger.error(f"Failed to download {dataset_id}: {str(e)}")
             raise HTTPException(
                 status_code=500,

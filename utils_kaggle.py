@@ -1,7 +1,7 @@
 """Utility functions for Kaggle dataset management.
 
 This module provides helpers for ensuring Kaggle credentials are configured
-and downloading datasets from Kaggle.
+and downloading datasets from Kaggle and Hugging Face.
 """
 import os
 import json
@@ -14,6 +14,9 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Default minimum file count for skip logic
+DEFAULT_MIN_FILES = 5
 
 
 def ensure_pkg(pkg: str) -> None:
@@ -190,7 +193,8 @@ def kaggle_download(
 def huggingface_clone(
     repo_url: str,
     dest: str,
-    skip_if_exists: bool = True
+    skip_if_exists: bool = True,
+    min_files: int = DEFAULT_MIN_FILES
 ) -> None:
     """Clone a Hugging Face dataset repository using git.
     
@@ -198,6 +202,7 @@ def huggingface_clone(
         repo_url: Hugging Face dataset URL (e.g., 'https://huggingface.co/datasets/byliu/DeepFurniture')
         dest: Destination directory for the dataset
         skip_if_exists: Skip clone if directory already has content
+        min_files: Minimum number of files required to consider directory as having content
         
     Raises:
         RuntimeError: If git is not available or clone fails
@@ -216,7 +221,7 @@ def huggingface_clone(
     dest_p = Path(dest)
     
     # Skip if already exists and has content
-    if skip_if_exists and folder_has_content(dest, 5):
+    if skip_if_exists and folder_has_content(dest, min_files):
         logger.info(f"Skipping existing dataset: {repo_url}")
         return
 
@@ -237,7 +242,7 @@ def huggingface_clone(
         )
         
         if result.stdout:
-            logger.info(result.stdout)
+            logger.debug(result.stdout)
         
         if result.returncode != 0:
             logger.error(result.stderr)

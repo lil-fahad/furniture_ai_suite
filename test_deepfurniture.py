@@ -6,7 +6,7 @@ without requiring actual network access to Hugging Face.
 import json
 import logging
 from pathlib import Path
-from utils_kaggle import huggingface_clone, folder_has_content
+from utils_kaggle import huggingface_clone, folder_has_content, DEFAULT_MIN_FILES
 
 # Configure logging
 logging.basicConfig(
@@ -54,12 +54,12 @@ def test_skip_logic():
     test_dir = Path("data/raw/test_skip_logic")
     test_dir.mkdir(parents=True, exist_ok=True)
     
-    # Create 6 test files
-    for i in range(6):
+    # Create test files (one more than DEFAULT_MIN_FILES to ensure skip logic triggers)
+    for i in range(DEFAULT_MIN_FILES + 1):
         (test_dir / f"test{i}.txt").write_text(f"test content {i}")
     
     # Test folder_has_content
-    has_content = folder_has_content(str(test_dir), min_files=5)
+    has_content = folder_has_content(str(test_dir), min_files=DEFAULT_MIN_FILES)
     
     if has_content:
         logger.info("✓ folder_has_content correctly detected existing files")
@@ -94,7 +94,7 @@ def test_function_signature():
     sig = inspect.signature(huggingface_clone)
     params = list(sig.parameters.keys())
     
-    expected_params = ["repo_url", "dest", "skip_if_exists"]
+    expected_params = ["repo_url", "dest", "skip_if_exists", "min_files"]
     
     if params == expected_params:
         logger.info("✓ Function signature is correct")
