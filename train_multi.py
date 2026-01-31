@@ -34,9 +34,9 @@ def make_transforms() -> Tuple[A.Compose, A.Compose]:
         - Horizontal flips
         - Brightness/contrast adjustments
         - Affine transformations (scale, translate, rotate, shear)
-        - Normalization to [0, 1] range
+        - ImageNet normalization (mean and std normalization)
     
-    Validation only applies normalization.
+    Validation only applies ImageNet normalization.
     
     Returns:
         Tuple of (train_transform, val_transform)
