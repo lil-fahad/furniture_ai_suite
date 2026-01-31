@@ -81,6 +81,51 @@ if 'alibaba_results' not in st.session_state:
 if 'floor_plan_results' not in st.session_state:
     st.session_state.floor_plan_results = None
 
+# Constants for translations
+ROOM_TYPE_AR = {
+    'living_room': 'غرفة المعيشة',
+    'bedroom': 'غرفة النوم',
+    'master_bedroom': 'غرفة النوم الرئيسية',
+    'dining_room': 'غرفة الطعام',
+    'kitchen': 'المطبخ',
+    'bathroom': 'الحمام',
+    'office': 'المكتب',
+    'storage_or_hallway': 'التخزين/الممر'
+}
+
+FURNITURE_AR = {
+    'sofa': 'أريكة',
+    'coffee_table': 'طاولة قهوة',
+    'tv_stand': 'حامل تلفاز',
+    'armchair': 'كرسي مريح',
+    'bookshelf': 'رف كتب',
+    'bed': 'سرير',
+    'king_bed': 'سرير كبير',
+    'nightstand': 'طاولة جانبية',
+    'nightstands_pair': 'طاولتان جانبيتان',
+    'wardrobe': 'خزانة ملابس',
+    'dresser': 'خزانة أدراج',
+    'chair': 'كرسي',
+    'seating_area': 'منطقة جلوس',
+    'dining_table': 'طاولة طعام',
+    'dining_table_small': 'طاولة طعام صغيرة',
+    'dining_chairs': 'كراسي طعام',
+    'buffet': 'بوفيه',
+    'china_cabinet': 'خزانة صيني',
+    'bar_stools': 'كراسي بار',
+    'kitchen_island': 'جزيرة مطبخ',
+    'vanity': 'طاولة زينة',
+    'storage_cabinet': 'خزانة تخزين',
+    'towel_rack': 'حامل مناشف',
+    'general_storage': 'تخزين عام'
+}
+
+PRIORITY_INFO = {
+    'essential': {'ar': 'أساسي', 'emoji': '⭐', 'color': '#28a745'},
+    'recommended': {'ar': 'موصى به', 'emoji': '💡', 'color': '#ffc107'},
+    'optional': {'ar': 'اختياري', 'emoji': '💭', 'color': '#6c757d'}
+}
+
 def display_analysis_results(results):
     """Display the floor plan analysis results with furniture recommendations."""
     if not results.get('success'):
@@ -106,57 +151,10 @@ def display_analysis_results(results):
     
     st.markdown("---")
     
-    # Room type translations
-    room_type_ar = {
-        'living_room': 'غرفة المعيشة',
-        'bedroom': 'غرفة النوم',
-        'master_bedroom': 'غرفة النوم الرئيسية',
-        'dining_room': 'غرفة الطعام',
-        'kitchen': 'المطبخ',
-        'bathroom': 'الحمام',
-        'office': 'المكتب',
-        'storage_or_hallway': 'التخزين/الممر'
-    }
-    
-    # Furniture translations
-    furniture_ar = {
-        'sofa': 'أريكة',
-        'coffee_table': 'طاولة قهوة',
-        'tv_stand': 'حامل تلفاز',
-        'armchair': 'كرسي مريح',
-        'bookshelf': 'رف كتب',
-        'bed': 'سرير',
-        'king_bed': 'سرير كبير',
-        'nightstand': 'طاولة جانبية',
-        'nightstands_pair': 'طاولتان جانبيتان',
-        'wardrobe': 'خزانة ملابس',
-        'dresser': 'خزانة أدراج',
-        'chair': 'كرسي',
-        'seating_area': 'منطقة جلوس',
-        'dining_table': 'طاولة طعام',
-        'dining_table_small': 'طاولة طعام صغيرة',
-        'dining_chairs': 'كراسي طعام',
-        'buffet': 'بوفيه',
-        'china_cabinet': 'خزانة صيني',
-        'bar_stools': 'كراسي بار',
-        'kitchen_island': 'جزيرة مطبخ',
-        'vanity': 'طاولة زينة',
-        'storage_cabinet': 'خزانة تخزين',
-        'towel_rack': 'حامل مناشف',
-        'general_storage': 'تخزين عام'
-    }
-    
-    # Priority translations and colors
-    priority_info = {
-        'essential': {'ar': 'أساسي', 'emoji': '⭐', 'color': '#28a745'},
-        'recommended': {'ar': 'موصى به', 'emoji': '💡', 'color': '#ffc107'},
-        'optional': {'ar': 'اختياري', 'emoji': '💭', 'color': '#6c757d'}
-    }
-    
     # Display each room
     for room in results.get('rooms', []):
         room_type = room.get('type', 'unknown')
-        room_name_ar = room_type_ar.get(room_type, room_type)
+        room_name_ar = ROOM_TYPE_AR.get(room_type, room_type)
         room_name_en = room_type.replace('_', ' ').title()
         
         with st.expander(f"🚪 الغرفة {room['id']}: {room_name_ar} | {room_name_en}", expanded=True):
@@ -177,9 +175,9 @@ def display_analysis_results(results):
                         item = rec.get('item', 'unknown')
                         priority = rec.get('priority', 'optional')
                         
-                        item_ar = furniture_ar.get(item, item)
+                        item_ar = FURNITURE_AR.get(item, item)
                         item_en = item.replace('_', ' ').title()
-                        prio = priority_info.get(priority, priority_info['optional'])
+                        prio = PRIORITY_INFO.get(priority, PRIORITY_INFO['optional'])
                         
                         st.markdown(
                             f"{prio['emoji']} **{item_ar}** ({item_en}) - "
