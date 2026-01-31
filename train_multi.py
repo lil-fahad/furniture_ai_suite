@@ -34,12 +34,17 @@ def make_transforms() -> Tuple[A.Compose, A.Compose]:
         - Horizontal flips
         - Brightness/contrast adjustments
         - Affine transformations (scale, translate, rotate, shear)
+        - ImageNet normalization (mean and std normalization)
     
-    Validation only applies normalization.
+    Validation only applies ImageNet normalization.
     
     Returns:
         Tuple of (train_transform, val_transform)
     """
+    # ImageNet mean and std for normalization
+    mean = [0.485, 0.456, 0.406]
+    std = [0.229, 0.224, 0.225]
+    
     train_tf = A.Compose([
         A.HorizontalFlip(p=0.5),
         A.RandomBrightnessContrast(p=0.3),
@@ -50,9 +55,13 @@ def make_transforms() -> Tuple[A.Compose, A.Compose]:
             shear={"x": (-5, 5), "y": (-5, 5)},
             p=0.5
         ),
+        A.Normalize(mean=mean, std=std),
         ToTensorV2()
     ])
-    val_tf = A.Compose([ToTensorV2()])
+    val_tf = A.Compose([
+        A.Normalize(mean=mean, std=std),
+        ToTensorV2()
+    ])
     
     logger.info("Created augmentation pipelines")
     return train_tf, val_tf
@@ -325,7 +334,6 @@ def train_all(
         logger.info(f"Exported TorchScript model to {torchscript_path}")
 
         # Export ONNX
-        import torch.onnx
         onnx_path = "artifacts/model.onnx"
         torch.onnx.export(
             model,

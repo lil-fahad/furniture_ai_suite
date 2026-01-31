@@ -110,12 +110,19 @@ def preprocess_pil(img: Image.Image, size: int = 256) -> torch.Tensor:
     Raises:
         ValueError: If image cannot be processed
     """
+    # ImageNet mean and std for normalization (must match training)
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    
     try:
         # Convert to RGB and resize (using LANCZOS for compatibility)
         img = img.convert('RGB').resize((size, size), Image.LANCZOS)
         
         # Convert to array and normalize to [0, 1]
         arr = np.array(img).astype(np.float32) / 255.0
+        
+        # Apply ImageNet normalization
+        arr = (arr - mean) / std
         
         # Transpose to CHW format
         arr = arr.transpose(2, 0, 1)
