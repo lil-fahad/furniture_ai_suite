@@ -77,32 +77,16 @@ Set up your Kaggle credentials (choose one method):
 pip install -r requirements.txt
 
 # Run Streamlit web interface
-streamlit run streamlit_app.py
-
-# Or use the provided script
-bash run_streamlit.sh  # Linux/Mac
-run_streamlit.bat      # Windows
+streamlit run streamlit_app.py --server.address 0.0.0.0 --server.port 8501
 ```
 Access at: `http://localhost:8501`
 
 See [STREAMLIT_GUIDE.md](STREAMLIT_GUIDE.md) for detailed Streamlit instructions.
 
-**On Replit:** 🌐
+**Local API (FastAPI):**
 ```bash
-# Simply click the "Run" button or use:
-bash setup_replit.sh
-# Then the app starts automatically
-```
-See [REPLIT_GUIDE.md](REPLIT_GUIDE.md) for detailed Replit deployment instructions.
-
-**Windows:**
-```bash
-run_windows.bat
-```
-
-**Mac/Linux:**
-```bash
-bash run_unix.sh
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Then open your browser to: **http://localhost:8000/docs**
