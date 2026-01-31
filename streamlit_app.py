@@ -1,13 +1,12 @@
 """
-Professional Interior Design AI Suite - Streamlit Web Interface
-واجهة ويب Streamlit لنظام تصميم الديكور الداخلي بالذكاء الاصطناعي
+Furniture Design Suite - Floor Plan Based Interior Design
+نظام تصميم الأثاث - تصميم الديكور الداخلي بناءً على مخطط البناء
 
-This Streamlit application provides an intuitive web interface for:
-- Searching furniture products on Alibaba
-- Analyzing floor plans and detecting rooms
-- Getting furniture recommendations
-- Managing datasets
-- System monitoring
+هذا التطبيق يوفر واجهة ويب سهلة الاستخدام لـ:
+- رفع مخططات البناء (Floor Plans)
+- تحليل الغرف تلقائياً
+- اقتراح الأثاث المناسب لكل غرفة
+- تصميم داخلي ذكي باستخدام الذكاء الاصطناعي
 """
 
 import streamlit as st
@@ -30,8 +29,8 @@ except ImportError:
 
 # Page configuration
 st.set_page_config(
-    page_title="Interior Design AI Suite",
-    page_icon="🏠",
+    page_title="نظام تصميم الأثاث | Furniture Design Suite",
+    page_icon="🪑",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -82,57 +81,259 @@ if 'alibaba_results' not in st.session_state:
 if 'floor_plan_results' not in st.session_state:
     st.session_state.floor_plan_results = None
 
+def display_analysis_results(results):
+    """Display the floor plan analysis results with furniture recommendations."""
+    if not results.get('success'):
+        st.error("❌ فشل التحليل | Analysis failed")
+        return
+    
+    st.markdown(f"## 📊 نتائج التحليل | Analysis Results")
+    
+    # Summary metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("🚪 عدد الغرف | Rooms Detected", results['rooms_detected'])
+    with col2:
+        total_furniture = sum(len(room.get('recommendations', [])) for room in results.get('rooms', []))
+        st.metric("🪑 قطع الأثاث المقترحة | Furniture Items", total_furniture)
+    with col3:
+        essential_count = sum(
+            1 for room in results.get('rooms', [])
+            for rec in room.get('recommendations', [])
+            if rec.get('priority') == 'essential'
+        )
+        st.metric("⭐ الأثاث الأساسي | Essential Items", essential_count)
+    
+    st.markdown("---")
+    
+    # Room type translations
+    room_type_ar = {
+        'living_room': 'غرفة المعيشة',
+        'bedroom': 'غرفة النوم',
+        'master_bedroom': 'غرفة النوم الرئيسية',
+        'dining_room': 'غرفة الطعام',
+        'kitchen': 'المطبخ',
+        'bathroom': 'الحمام',
+        'office': 'المكتب',
+        'storage_or_hallway': 'التخزين/الممر'
+    }
+    
+    # Furniture translations
+    furniture_ar = {
+        'sofa': 'أريكة',
+        'coffee_table': 'طاولة قهوة',
+        'tv_stand': 'حامل تلفاز',
+        'armchair': 'كرسي مريح',
+        'bookshelf': 'رف كتب',
+        'bed': 'سرير',
+        'king_bed': 'سرير كبير',
+        'nightstand': 'طاولة جانبية',
+        'nightstands_pair': 'طاولتان جانبيتان',
+        'wardrobe': 'خزانة ملابس',
+        'dresser': 'خزانة أدراج',
+        'chair': 'كرسي',
+        'seating_area': 'منطقة جلوس',
+        'dining_table': 'طاولة طعام',
+        'dining_table_small': 'طاولة طعام صغيرة',
+        'dining_chairs': 'كراسي طعام',
+        'buffet': 'بوفيه',
+        'china_cabinet': 'خزانة صيني',
+        'bar_stools': 'كراسي بار',
+        'kitchen_island': 'جزيرة مطبخ',
+        'vanity': 'طاولة زينة',
+        'storage_cabinet': 'خزانة تخزين',
+        'towel_rack': 'حامل مناشف',
+        'general_storage': 'تخزين عام'
+    }
+    
+    # Priority translations and colors
+    priority_info = {
+        'essential': {'ar': 'أساسي', 'emoji': '⭐', 'color': '#28a745'},
+        'recommended': {'ar': 'موصى به', 'emoji': '💡', 'color': '#ffc107'},
+        'optional': {'ar': 'اختياري', 'emoji': '💭', 'color': '#6c757d'}
+    }
+    
+    # Display each room
+    for room in results.get('rooms', []):
+        room_type = room.get('type', 'unknown')
+        room_name_ar = room_type_ar.get(room_type, room_type)
+        room_name_en = room_type.replace('_', ' ').title()
+        
+        with st.expander(f"🚪 الغرفة {room['id']}: {room_name_ar} | {room_name_en}", expanded=True):
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.markdown(f"**📏 المساحة | Area:** {room.get('area', 0):,} بكسل")
+                st.markdown(f"**🏷️ النوع | Type:** {room_name_ar}")
+            
+            with col2:
+                st.markdown("### 🪑 الأثاث المقترح | Recommended Furniture")
+                
+                recommendations = room.get('recommendations', [])
+                if not recommendations:
+                    st.info("لا توجد توصيات لهذه الغرفة")
+                else:
+                    for rec in recommendations:
+                        item = rec.get('item', 'unknown')
+                        priority = rec.get('priority', 'optional')
+                        
+                        item_ar = furniture_ar.get(item, item)
+                        item_en = item.replace('_', ' ').title()
+                        prio = priority_info.get(priority, priority_info['optional'])
+                        
+                        st.markdown(
+                            f"{prio['emoji']} **{item_ar}** ({item_en}) - "
+                            f"<span style='color: {prio['color']}'>{prio['ar']}</span>",
+                            unsafe_allow_html=True
+                        )
+
 def render_header():
     """Render the application header."""
-    st.markdown('<h1 class="main-header">🏠 Interior Design AI Suite</h1>', unsafe_allow_html=True)
-    st.markdown('<p style="text-align: center;">نظام تصميم الديكور الداخلي بالذكاء الاصطناعي</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">🪑 نظام تصميم الأثاث | Furniture Design Suite</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; font-size: 1.2rem;">ارفع مخطط البناء واحصل على توصيات الأثاث المناسب لكل غرفة</p>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center;">Upload your floor plan and get furniture recommendations for each room</p>', unsafe_allow_html=True)
     st.markdown("---")
 
 def render_home():
-    """Render the home page."""
-    st.markdown('<h2 class="sub-header">Welcome | مرحباً</h2>', unsafe_allow_html=True)
+    """Render the home page with main floor plan upload feature."""
+    st.markdown('<h2 class="sub-header">📐 ارفع مخطط البناء | Upload Floor Plan</h2>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
+    st.markdown("""
+    ### 🏠 كيف يعمل النظام؟ | How it works?
     
-    with col1:
-        st.markdown("### 🌟 Features")
-        st.markdown("""
-        - **🔍 Alibaba Search**: Search furniture products from Alibaba
-        - **📐 Floor Plan Analysis**: Analyze floor plans and detect rooms
-        - **💡 Recommendations**: Get AI-powered furniture recommendations
-        - **📊 Dataset Management**: View and manage datasets
-        - **💻 System Monitoring**: Check system health and status
-        """)
-    
-    with col2:
-        st.markdown("### ✨ المميزات")
-        st.markdown("""
-        - **🔍 بحث Alibaba**: البحث عن منتجات الأثاث من Alibaba
-        - **📐 تحليل المخططات**: تحليل المخططات الأرضية وكشف الغرف
-        - **💡 التوصيات**: احصل على توصيات الأثاث بالذكاء الاصطناعي
-        - **📊 إدارة البيانات**: عرض وإدارة مجموعات البيانات
-        - **💻 مراقبة النظام**: التحقق من صحة النظام وحالته
-        """)
+    1. **ارفع مخطط البناء** - Upload your floor plan image (PNG, JPG, JPEG)
+    2. **التحليل التلقائي** - The system will automatically detect rooms
+    3. **توصيات الأثاث** - Get AI-powered furniture recommendations for each room
+    """)
     
     st.markdown("---")
     
-    # System status
-    st.markdown("### 📊 System Status | حالة النظام")
-    if MODULES_AVAILABLE:
-        st.success("✅ All modules loaded successfully | تم تحميل جميع الوحدات بنجاح")
-    else:
-        st.warning("⚠️ Some modules not available. Running in demo mode. | بعض الوحدات غير متاحة.")
+    # Main floor plan upload
+    uploaded_file = st.file_uploader(
+        "📁 اختر ملف مخطط البناء | Select Floor Plan File",
+        type=['png', 'jpg', 'jpeg'],
+        help="ارفع صورة مخطط البناء للحصول على تحليل الغرف وتوصيات الأثاث"
+    )
     
-    # Quick stats
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Available Features", "5")
-    with col2:
-        st.metric("Datasets", "8")
-    with col3:
-        st.metric("Models", "3")
-    with col4:
-        st.metric("API Version", "2.0.0")
+    if uploaded_file is not None:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 📋 مخطط البناء المرفوع | Uploaded Floor Plan")
+            image = Image.open(uploaded_file)
+            st.image(image, caption="مخطط البناء", use_container_width=True)
+        
+        with col2:
+            st.markdown("### ⚙️ إعدادات التحليل | Analysis Settings")
+            min_room_area = st.slider("الحد الأدنى لمساحة الغرفة (بكسل)", 1000, 20000, 5000)
+            
+            if st.button("🔍 تحليل المخطط واقتراح الأثاث | Analyze & Recommend", type="primary", use_container_width=True):
+                with st.spinner("جاري تحليل المخطط... | Analyzing floor plan..."):
+                    try:
+                        if MODULES_AVAILABLE:
+                            # Convert image to bytes
+                            img_byte_arr = io.BytesIO()
+                            image.save(img_byte_arr, format='PNG')
+                            img_byte_arr = img_byte_arr.getvalue()
+                            
+                            # Create analyzer
+                            analyzer = FloorPlanAnalyzer(min_room_area=min_room_area)
+                            
+                            # Analyze
+                            import cv2
+                            nparr = np.frombuffer(img_byte_arr, np.uint8)
+                            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                            preprocessed = analyzer.preprocess(img)
+                            rooms = analyzer.detect_rooms(preprocessed)
+                            
+                            results = {
+                                'success': True,
+                                'rooms_detected': len(rooms),
+                                'rooms': []
+                            }
+                            
+                            for i, room in enumerate(rooms):
+                                recommendations = analyzer.recommend_furniture(room)
+                                results['rooms'].append({
+                                    'id': i + 1,
+                                    'type': room['type'],
+                                    'area': room['area_pixels'],
+                                    'recommendations': recommendations
+                                })
+                            
+                            st.session_state.floor_plan_results = results
+                            st.success(f"✅ تم التحليل! تم اكتشاف {len(rooms)} غرفة | Found {len(rooms)} room(s)")
+                        else:
+                            # Demo mode
+                            st.session_state.floor_plan_results = {
+                                'success': True,
+                                'rooms_detected': 3,
+                                'rooms': [
+                                    {
+                                        'id': 1,
+                                        'type': 'living_room',
+                                        'area': 150000,
+                                        'recommendations': [
+                                            {'item': 'sofa', 'priority': 'essential'},
+                                            {'item': 'coffee_table', 'priority': 'essential'},
+                                            {'item': 'tv_stand', 'priority': 'recommended'},
+                                            {'item': 'armchair', 'priority': 'optional'},
+                                        ]
+                                    },
+                                    {
+                                        'id': 2,
+                                        'type': 'bedroom',
+                                        'area': 80000,
+                                        'recommendations': [
+                                            {'item': 'bed', 'priority': 'essential'},
+                                            {'item': 'wardrobe', 'priority': 'essential'},
+                                            {'item': 'nightstand', 'priority': 'recommended'},
+                                        ]
+                                    },
+                                    {
+                                        'id': 3,
+                                        'type': 'kitchen',
+                                        'area': 45000,
+                                        'recommendations': [
+                                            {'item': 'dining_table_small', 'priority': 'recommended'},
+                                            {'item': 'bar_stools', 'priority': 'optional'},
+                                        ]
+                                    }
+                                ]
+                            }
+                            st.success("✅ تم التحليل (وضع تجريبي) | Analysis complete (demo mode)")
+                            
+                    except Exception as e:
+                        st.error(f"❌ خطأ في التحليل: {str(e)}")
+        
+        # Display results
+        if st.session_state.floor_plan_results:
+            st.markdown("---")
+            display_analysis_results(st.session_state.floor_plan_results)
+    else:
+        # Show example when no file uploaded
+        st.info("👆 ارفع مخطط البناء للبدء | Upload a floor plan to get started")
+        
+        st.markdown("### 📝 أمثلة على أنواع الغرف | Room Types We Detect:")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("""
+            - 🛋️ غرفة المعيشة (Living Room)
+            - 🛏️ غرفة النوم (Bedroom)
+            - 🍽️ غرفة الطعام (Dining Room)
+            """)
+        with col2:
+            st.markdown("""
+            - 🍳 المطبخ (Kitchen)
+            - 🚿 الحمام (Bathroom)
+            - 💼 المكتب (Office)
+            """)
+        with col3:
+            st.markdown("""
+            - 📦 التخزين (Storage)
+            - 🚶 الممر (Hallway)
+            - 🛏️ غرفة النوم الرئيسية (Master Bedroom)
+            """)
 
 def render_alibaba_search():
     """Render the Alibaba furniture search interface."""
@@ -526,30 +727,38 @@ def main():
     render_header()
     
     # Sidebar navigation
-    st.sidebar.title("🧭 Navigation | التنقل")
+    st.sidebar.title("🧭 التنقل | Navigation")
     
     pages = {
-        "🏠 Home | الرئيسية": render_home,
-        "🔍 Alibaba Search | بحث Alibaba": render_alibaba_search,
-        "📐 Floor Plan Analyzer | محلل المخططات": render_floor_plan_analyzer,
-        "💡 Recommendations | التوصيات": render_furniture_recommendations,
-        "📊 Datasets | مجموعات البيانات": render_datasets,
-        "💻 System Status | حالة النظام": render_system_status,
+        "📐 رفع المخطط | Upload Plan": render_home,
+        "💡 توصيات الأثاث | Recommendations": render_furniture_recommendations,
+        "🔍 بحث المنتجات | Search Products": render_alibaba_search,
+        "💻 حالة النظام | System Status": render_system_status,
     }
     
-    selection = st.sidebar.radio("Select Page | اختر الصفحة", list(pages.keys()))
+    selection = st.sidebar.radio("اختر الصفحة | Select Page", list(pages.keys()))
     
     # Information in sidebar
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### ℹ️ About | حول")
+    st.sidebar.markdown("### ℹ️ حول النظام | About")
     st.sidebar.info("""
-    **Interior Design AI Suite**
+    **🪑 نظام تصميم الأثاث**
+    **Furniture Design Suite**
     
-    A professional interior design system powered by AI.
+    ارفع مخطط البناء واحصل على توصيات الأثاث المناسب لكل غرفة.
     
-    نظام تصميم ديكور داخلي احترافي يعمل بالذكاء الاصطناعي.
+    Upload your floor plan and get AI-powered furniture recommendations.
     
-    Version: 2.0.0
+    الإصدار | Version: 2.0.0
+    """)
+    
+    # Quick help in sidebar
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 💡 نصائح | Tips")
+    st.sidebar.markdown("""
+    - استخدم صور واضحة للمخطط
+    - تأكد من وضوح حدود الغرف
+    - يمكنك تعديل إعدادات التحليل
     """)
     
     # Render selected page
@@ -559,8 +768,8 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: gray; padding: 2rem;'>
-        <p>© 2026 Interior Design AI Suite | نظام تصميم الديكور الداخلي</p>
-        <p>Developed with ❤️ using Streamlit | تم التطوير باستخدام Streamlit</p>
+        <p>© 2026 نظام تصميم الأثاث | Furniture Design Suite</p>
+        <p>صُمم بـ ❤️ باستخدام الذكاء الاصطناعي | Powered by AI</p>
     </div>
     """, unsafe_allow_html=True)
 
