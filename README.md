@@ -231,6 +231,7 @@ The application integrates multiple high-quality interior design and furniture d
    - Repository: https://huggingface.co/datasets/byliu/DeepFurniture
    - Can be cloned via API endpoint `/clone-deepfurniture` or command line script
    - Integrates seamlessly with existing data processing pipeline
+   - See [DEEPFURNITURE_GUIDE.md](DEEPFURNITURE_GUIDE.md) for detailed instructions
 
 All datasets are automatically downloaded and integrated from their respective sources.
 
