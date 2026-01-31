@@ -205,7 +205,7 @@ def generate_dataset(
     for class_name in classes:
         for i in range(train_samples_per_class):
             # Use unique seed for each image for variety
-            seed = hash(f"{class_name}_train_{i}") % (2**31)
+            seed = abs(hash(f"{class_name}_train_{i}")) % (2**31)
             img = create_synthetic_room_image(class_name, img_size, seed)
             img_path = train_dir / class_name / f"{class_name}_{i:04d}.jpg"
             img.save(img_path, quality=95)
@@ -217,7 +217,7 @@ def generate_dataset(
     for class_name in classes:
         for i in range(val_samples_per_class):
             # Use different seed pattern for validation
-            seed = hash(f"{class_name}_val_{i}") % (2**31)
+            seed = abs(hash(f"{class_name}_val_{i}")) % (2**31)
             img = create_synthetic_room_image(class_name, img_size, seed)
             img_path = val_dir / class_name / f"{class_name}_val_{i:04d}.jpg"
             img.save(img_path, quality=95)
