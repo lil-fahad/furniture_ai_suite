@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Furniture AI Suite — Professional Interior Design AI</title>
+    <meta name="description" content="A state-of-the-art interior design classification system powered by deep learning. Floor plan analysis, furniture recommendations, and Alibaba product integration." />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f1115;
+            --surface: #161a22;
+            --surface-2: #1d222c;
+            --text: #e6e9ef;
+            --muted: #9aa3b2;
+            --accent: #7c5cff;
+            --accent-2: #00d4ff;
+            --border: #262b36;
+        }
+        html, body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+        a { color: var(--accent-2); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        /* Navbar */
+        nav {
+            position: sticky; top: 0;
+            background: rgba(15, 17, 21, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 50;
+        }
+        nav .container {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 16px; padding-bottom: 16px;
+        }
+        .brand { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.3px; }
+        .brand span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .nav-links a { color: var(--muted); margin-left: 22px; font-size: 0.95rem; }
+        .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+            background:
+                radial-gradient(ellipse at top, rgba(124, 92, 255, 0.18), transparent 60%),
+                radial-gradient(ellipse at bottom, rgba(0, 212, 255, 0.10), transparent 60%);
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.6rem);
+            font-weight: 800; line-height: 1.15; margin-bottom: 18px;
+        }
+        .hero h1 .grad {
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .hero p { color: var(--muted); max-width: 720px; margin: 0 auto 32px; font-size: 1.1rem; }
+        .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .btn {
+            display: inline-block; padding: 12px 22px; border-radius: 10px;
+            font-weight: 600; font-size: 0.95rem; transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            color: #0b0d12;
+        }
+        .btn-primary:hover { transform: translateY(-1px); text-decoration: none; box-shadow: 0 8px 24px rgba(124, 92, 255, 0.35); }
+        .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+        .btn-secondary:hover { border-color: var(--accent); text-decoration: none; }
+
+        /* Sections */
+        section { padding: 70px 0; }
+        h2 { font-size: 2rem; margin-bottom: 12px; }
+        .section-sub { color: var(--muted); margin-bottom: 40px; max-width: 700px; }
+
+        /* Features grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .card .icon {
+            font-size: 1.8rem; margin-bottom: 12px; display: inline-block;
+        }
+        .card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+        .card p { color: var(--muted); font-size: 0.95rem; }
+
+        /* Interfaces */
+        .interfaces .card { display: flex; flex-direction: column; }
+        .badge {
+            display: inline-block; font-size: 0.7rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 999px; margin-left: 8px;
+            background: rgba(124, 92, 255, 0.18); color: var(--accent);
+        }
+        .endpoint {
+            margin-top: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            background: var(--bg); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;
+            color: var(--accent-2);
+        }
+
+        /* Quick start */
+        pre {
+            background: #0b0d12; border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px; overflow-x: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.9rem; line-height: 1.6;
+            color: #cfd6e4;
+        }
+        pre .c { color: #6b7280; }
+        pre .k { color: #c084fc; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0; text-align: center;
+            color: var(--muted); font-size: 0.9rem;
+        }
+        footer a { color: var(--muted); margin: 0 10px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <div class="brand">🎨 Furniture<span>AI</span> Suite</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#interfaces">Interfaces</a>
+            <a href="#quickstart">Quick Start</a>
+            <a href="https://github.com/lil-fahad/furniture_ai_suite" target="_blank" rel="noopener">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="container">
+        <h1>Professional <span class="grad">Interior Design AI</span> Suite</h1>
+        <p>A state-of-the-art classification system powered by deep learning. From data acquisition to model training, floor plan analysis, and furniture recommendations — all in one place.</p>
+        <div class="cta">
+            <a class="btn btn-primary" href="#quickstart">🚀 Get Started</a>
+            <a class="btn btn-secondary" href="https://github.com/lil-fahad/furniture_ai_suite" target="_blank" rel="noopener">⭐ View on GitHub</a>
+        </div>
+    </div>
+</header>
+
+<section id="features">
+    <div class="container">
+        <h2>🌟 Features</h2>
+        <p class="section-sub">Everything you need for an end-to-end interior design AI workflow.</p>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">📊</div>
+                <h3>Multi-Source Datasets</h3>
+                <p>Automatic download and integration of multiple interior design datasets from Kaggle.</p>
+            </div>
+            <div class="card">
+                <div class="icon">🧠</div>
+                <h3>SOTA Models</h3>
+                <p>Train with EfficientNet, ConvNeXt, and Swin Transformer architectures.</p>
+            </div>
+            <div class="card">
+                <div class="icon">🏠</div>
+                <h3>Floor Plan Analysis</h3>
+                <p>Advanced floor plan reading and intelligent room detection capabilities.</p>
+            </div>
+            <div class="card">
+                <div class="icon">🛋️</div>
+                <h3>Furniture Recommendations</h3>
+                <p>AI-powered recommendations tailored to each room's analysis.</p>
+            </div>
+            <div class="card">
+                <div class="icon">🛒</div>
+                <h3>Alibaba Integration</h3>
+                <p>Search and retrieve furniture products directly from Alibaba marketplace.</p>
+            </div>
+            <div class="card">
+                <div class="icon">📦</div>
+                <h3>Flexible Export</h3>
+                <p>Export models to PyTorch, TorchScript, or ONNX for any deployment target.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interfaces" class="interfaces">
+    <div class="container">
+        <h2>🎛️ Three Interfaces, One Suite</h2>
+        <p class="section-sub">Choose the way that fits your workflow — beginner, developer, or power user.</p>
+        <div class="grid">
+            <div class="card">
+                <div class="icon">🌐</div>
+                <h3>Streamlit Web UI <span class="badge">NEW</span></h3>
+                <p>Beautiful, intuitive interface for non-technical users. No coding required — perfect for demos.</p>
+                <div class="endpoint">http://localhost:8501</div>
+            </div>
+            <div class="card">
+                <div class="icon">🔧</div>
+                <h3>FastAPI REST API</h3>
+                <p>Production-ready RESTful endpoints with Swagger documentation. Ideal for integrations.</p>
+                <div class="endpoint">http://localhost:8000/docs</div>
+            </div>
+            <div class="card">
+                <div class="icon">💻</div>
+                <h3>Command Line</h3>
+                <p>Direct Python scripts for full control, automation, training, and batch processing.</p>
+                <div class="endpoint">python train_multi.py</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="quickstart">
+    <div class="container">
+        <h2>🚀 Quick Start</h2>
+        <p class="section-sub">Get up and running in less than a minute.</p>
+<pre><span class="c"># Clone the repository</span>
+<span class="k">git</span> clone https://github.com/lil-fahad/furniture_ai_suite.git
+<span class="k">cd</span> furniture_ai_suite
+
+<span class="c"># Install dependencies</span>
+<span class="k">pip</span> install -r requirements.txt
+
+<span class="c"># Launch the Streamlit web interface</span>
+<span class="k">streamlit</span> run streamlit_app.py</pre>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>Built with ❤️ for designers, developers, and AI enthusiasts.</p>
+        <p style="margin-top: 8px;">
+            <a href="https://github.com/lil-fahad/furniture_ai_suite" target="_blank" rel="noopener">GitHub</a> ·
+            <a href="https://github.com/lil-fahad/furniture_ai_suite/blob/main/README.md" target="_blank" rel="noopener">Docs</a> ·
+            <a href="https://github.com/lil-fahad/furniture_ai_suite/blob/main/API_EXAMPLES.md" target="_blank" rel="noopener">API Examples</a>
+        </p>
+    </div>
+</footer>
+
+</body>
+</html>
