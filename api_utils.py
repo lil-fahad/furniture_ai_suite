@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
 from io import BytesIO
 
 from fastapi import Header, HTTPException, UploadFile
@@ -29,7 +30,7 @@ def require_admin(x_admin_key: str | None = Header(default=None)) -> None:
     expected = os.getenv("ADMIN_API_KEY")
     if not expected:
         raise HTTPException(status_code=503, detail="Administrative API is not configured")
-    if x_admin_key != expected:
+    if not secrets.compare_digest(x_admin_key or "", expected):
         raise HTTPException(status_code=401, detail="Invalid administrative API key")
 
 
