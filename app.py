@@ -16,6 +16,7 @@ from typing import Dict, Any, List
 import httpx
 
 from utils_kaggle import ensure_pkg, ensure_kaggle_token, kaggle_download
+from utils_github import download_github_release, download_github_archive
 from prepare_data import scan_images, unify_and_clean, export_clean_256
 from train_multi import train_all
 from infer import predict_bytes
@@ -175,6 +176,101 @@ def download_all(skip_if_exists: bool = True) -> Dict[str, Any]:
         "downloaded": downloaded_count,
         "skipped": skipped_count
     }
+
+
+@app.post("/download-github", tags=["Data Management"])
+def download_from_github(
+    owner: str = Query(..., description="GitHub repository owner"),
+    repo: str = Query(..., description="Repository name"),
+    dest: str = Query("data/raw/github_dataset", description="Destination directory"),
+    ref: str = Query("main", description="Git reference (branch, tag, or commit)"),
+    asset_name: str = Query(None, description="Release asset name (for release downloads)"),
+    tag: str = Query(None, description="Release tag (use with asset_name for releases)"),
+    skip_if_exists: bool = Query(True, description="Skip if destination already has content")
+) -> Dict[str, Any]:
+    """Download a dataset from a GitHub repository.
+    
+    This endpoint supports two modes:
+    1. **Repository archive**: Download the entire repository as a zip
+       - Just provide owner, repo, and optionally ref (branch/tag)
+    2. **Release asset**: Download a specific file from a GitHub release
+       - Provide owner, repo, asset_name, and optionally tag
+    
+    Args:
+        owner: GitHub username or organization
+        repo: Repository name
+        dest: Local destination directory
+        ref: Git reference for archive download (branch, tag, or SHA)
+        asset_name: Release asset filename (e.g., "dataset.zip")
+        tag: Release tag (e.g., "v1.0"). Use "latest" for latest release.
+        skip_if_exists: Skip download if destination has content
+        
+    Returns:
+        Dictionary with download status and destination path
+        
+    Examples:
+        # Download repository archive
+        POST /download-github?owner=username&repo=dataset-repo&ref=main
+        
+        # Download release asset
+        POST /download-github?owner=username&repo=dataset-repo&asset_name=data.zip&tag=v1.0
+        
+    Raises:
+        HTTPException: If download fails
+    """
+    logger.info(f"GitHub download requested: {owner}/{repo}")
+    
+    try:
+        if asset_name:
+            # Download from release
+            release_tag = tag if tag else "latest"
+            logger.info(f"Downloading release asset: {asset_name} from tag {release_tag}")
+            
+            result_path = download_github_release(
+                owner=owner,
+                repo=repo,
+                asset_name=asset_name,
+                dest_dir=dest,
+                tag=release_tag,
+                extract=True,
+                skip_if_exists=skip_if_exists
+            )
+            
+            return {
+                "ok": True,
+                "message": f"Successfully downloaded release asset from {owner}/{repo}",
+                "source": f"https://github.com/{owner}/{repo}/releases",
+                "asset": asset_name,
+                "tag": release_tag,
+                "destination": result_path
+            }
+        else:
+            # Download repository archive
+            logger.info(f"Downloading repository archive from ref: {ref}")
+            
+            result_path = download_github_archive(
+                owner=owner,
+                repo=repo,
+                dest_dir=dest,
+                ref=ref,
+                skip_if_exists=skip_if_exists
+            )
+            
+            return {
+                "ok": True,
+                "message": f"Successfully downloaded repository from {owner}/{repo}",
+                "source": f"https://github.com/{owner}/{repo}",
+                "ref": ref,
+                "destination": result_path
+            }
+            
+    except Exception as e:
+        logger.error(f"GitHub download failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to download from GitHub: {str(e)}"
+        )
+
 
 @app.post("/prepare", tags=["Data Management"])
 def prepare() -> Dict[str, Any]:
