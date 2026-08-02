@@ -59,6 +59,7 @@ class AccuracyTester:
                 "train_multi.py",
                 "prepare_data.py",
                 "utils_kaggle.py",
+                "download_datasets.py",
                 "datasets_catalog.json",
                 "model_config.yml"
             ]
@@ -73,6 +74,21 @@ class AccuracyTester:
             
         except Exception as e:
             logger.error(f"✗ Import test failed: {e}")
+            return False
+
+    def test_dataset_downloader(self) -> bool:
+        """Test the dataset downloader in dry-run mode."""
+        logger.info("\nTesting dataset downloader...")
+
+        try:
+            from download_datasets import download_datasets
+
+            processed = download_datasets(dry_run=True)
+            assert processed, "Dry-run should return dataset slugs"
+            logger.info(f"✓ Dataset downloader dry-run listed {len(processed)} datasets")
+            return True
+        except Exception as e:
+            logger.error(f"✗ Dataset downloader test failed: {e}")
             return False
     
     def test_alibaba_scraper(self) -> bool:
@@ -281,6 +297,7 @@ class AccuracyTester:
         
         tests = [
             ("Module Imports", self.test_imports),
+            ("Dataset Downloader", self.test_dataset_downloader),
             ("Alibaba Scraper", self.test_alibaba_scraper),
             ("Floor Plan Analyzer", self.test_floor_plan_analyzer),
             ("Datasets Catalog", self.test_datasets_catalog),

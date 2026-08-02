@@ -69,6 +69,26 @@ Set up your Kaggle credentials (choose one method):
 2. **Project root**: Place `kaggle.json` in the project directory
 3. **Environment variables**: Set `KAGGLE_USERNAME` and `KAGGLE_KEY`
 
+### Downloading the Dataset
+
+Use the CLI helper to download datasets from `datasets_catalog.json`:
+
+```bash
+python3 download_datasets.py
+```
+
+Download a single dataset by slug:
+
+```bash
+python3 download_datasets.py --slug prashantsingh001/bedroom-interior-dataset
+```
+
+Preview what will be downloaded without downloading:
+
+```bash
+python3 download_datasets.py --dry-run
+```
+
 ### Running the Application
 
 **On Streamlit (Web Interface):** 🌐 **NEW!**
