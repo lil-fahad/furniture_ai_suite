@@ -13,7 +13,8 @@ MAX_IMAGE_PIXELS = int(os.getenv("MAX_IMAGE_PIXELS", "25000000"))
 
 
 def allowed_origins() -> list[str]:
-    configured = os.getenv("ALLOWED_ORIGINS", "http://localhost:8501,http://127.0.0.1:8501")
+    default_origins = "http://localhost:8501,http://127.0.0.1:8501"
+    configured = os.getenv("ALLOWED_ORIGINS", default_origins)
     origins = [value.strip() for value in configured.split(",") if value.strip()]
     if "*" in origins and os.getenv("ALLOW_CREDENTIALS", "false").lower() == "true":
         raise RuntimeError("Wildcard CORS cannot be combined with credentials")
@@ -34,7 +35,8 @@ def require_admin(x_admin_key: str | None = Header(default=None)) -> None:
 
 async def read_validated_image(file: UploadFile) -> tuple[bytes, Image.Image]:
     if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=415, detail="Only JPEG, PNG, and WebP images are accepted")
+        detail = "Only JPEG, PNG, and WebP images are accepted"
+        raise HTTPException(status_code=415, detail=detail)
     payload = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(payload) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Image exceeds the upload limit")
@@ -47,23 +49,28 @@ async def read_validated_image(file: UploadFile) -> tuple[bytes, Image.Image]:
     except (UnidentifiedImageError, OSError, ValueError) as exc:
         raise HTTPException(status_code=400, detail="Invalid or corrupted image") from exc
     if image.width * image.height > MAX_IMAGE_PIXELS:
-        raise HTTPException(status_code=413, detail="Image dimensions exceed the safe pixel limit")
+        detail = "Image dimensions exceed the safe pixel limit"
+        raise HTTPException(status_code=413, detail=detail)
     return payload, image
 
 
 def safe_slug(value: str, *, fallback: str = "item") -> str:
-    normalized = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip()).strip("-_").lower()
+    normalized = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip())
+    normalized = normalized.strip("-_").lower()
     return normalized[:80] or fallback
 
 
 def canonical_floor_plan(raw: dict, *, width: int, height: int) -> dict:
     rooms = []
+    has_unplaced_recommendations = False
     for index, room in enumerate(raw.get("rooms", []), start=1):
         bounding = room.get("bounding_box", {})
         x = float(bounding.get("x", 0))
         y = float(bounding.get("y", 0))
         box_width = float(bounding.get("width", 0))
         box_height = float(bounding.get("height", 0))
+        if room.get("furniture_recommendations"):
+            has_unplaced_recommendations = True
         rooms.append(
             {
                 "id": f"room-{room.get('id', index)}",
@@ -76,8 +83,17 @@ def canonical_floor_plan(raw: dict, *, width: int, height: int) -> dict:
                 ],
                 "area": float(room.get("area_pixels", box_width * box_height)),
                 "confidence": None,
-                "furniture": room.get("furniture_recommendations", []),
+                "furniture": [],
             }
+        )
+
+    warnings = [
+        "Room labels are heuristic unless a trained semantic classifier is configured."
+    ]
+    if has_unplaced_recommendations:
+        warnings.append(
+            "Rule recommendations were not represented as placements because coordinates "
+            "and dimensions were unavailable."
         )
     return {
         "schema_version": "1.0",
@@ -90,7 +106,5 @@ def canonical_floor_plan(raw: dict, *, width: int, height: int) -> dict:
             {"kind": "door", **opening} for opening in raw.get("doors", [])
         ]
         + [{"kind": "window", **opening} for opening in raw.get("windows", [])],
-        "warnings": [
-            "Room labels are heuristic unless a trained semantic classifier is configured."
-        ],
+        "warnings": warnings,
     }
