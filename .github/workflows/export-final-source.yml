@@ -1,0 +1,44 @@
+name: Export final source snapshot
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pinned source
+        uses: actions/checkout@v4
+        with:
+          ref: 06199f5d3515d623aa2493efa3088481c3265406
+          fetch-depth: 1
+          lfs: true
+          submodules: false
+          path: source
+      - name: Scan source for common credential patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RIlE --binary-files=without-match --exclude-dir=.git --exclude='.env' --exclude='.env.local' 'sk-proj-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|LTAI[A-Za-z0-9]{12,}|-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----' source; then
+            echo 'Potential credential found; refusing to export.' >&2
+            exit 1
+          fi
+      - name: Build verified archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/export"; mkdir -p "$out"
+          printf '%s\n' '{"repository":"lil-fahad/furniture_ai_suite","commit":"06199f5d3515d623aa2493efa3088481c3265406","history_included":false,"sensitive_local_files_excluded":true}' > "$out/manifest.json"
+          tar -C source --exclude='.git' --exclude='.env' --exclude='.env.local' --exclude='.env.*.local' --exclude='.env.production' --exclude='.env.development' --exclude='.env.test' --exclude='*.pem' --exclude='*.key' --exclude='id_rsa*' --exclude='credentials*.json' --exclude='secrets*.json' --exclude='node_modules' --exclude='.venv' --exclude='venv' --exclude='__pycache__' --exclude='.pytest_cache' --exclude='.ruff_cache' -czf "$out/furniture_ai_suite.tar.gz" .
+          sha256sum "$out/furniture_ai_suite.tar.gz" > "$out/furniture_ai_suite.sha256"
+      - name: Upload verified source
+        uses: actions/upload-artifact@v4
+        with:
+          name: furniture-ai-suite-source
+          path: ${{ runner.temp }}/export/*
+          retention-days: 7
+          if-no-files-found: error
