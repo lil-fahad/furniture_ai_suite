@@ -38,5 +38,11 @@
     "slug": "paramaggarwal/fashion-product-images-dataset",
     "dest": "data/raw/product_images",
     "description": "Product images including home decor items"
+  },
+  {
+    "source": "huggingface",
+    "repo_url": "https://huggingface.co/datasets/byliu/DeepFurniture",
+    "dest": "data/raw/deepfurniture",
+    "description": "DeepFurniture dataset from Hugging Face"
   }
 ]
