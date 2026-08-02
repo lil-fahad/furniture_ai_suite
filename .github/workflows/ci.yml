@@ -8,9 +8,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   api-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       PYTHONPATH: ${{ github.workspace }}
     steps:
@@ -20,8 +25,24 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install test dependencies
-        run: python -m pip install fastapi pillow pytest httpx python-multipart
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install fastapi pillow pytest httpx python-multipart uvicorn ruff
       - name: Compile
-        run: python -m compileall -q api_utils.py secure_app.py
+        run: python -m compileall -q api_utils.py secure_app.py tests
+      - name: Lint
+        run: ruff check api_utils.py secure_app.py tests
+      - name: Validate launcher and application
+        run: |
+          bash -n run_unix.sh
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          from secure_app import app
+
+          assert app.title == "Interior Design AI Suite"
+          response = TestClient(app).get("/health")
+          assert response.status_code == 200
+          assert response.json()["status"] == "healthy"
+          PY
       - name: Test
         run: pytest -q tests
